@@ -1,0 +1,41 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Hola, {{ nombreUsuario() }}</h1>
+  </div>
+
+  @if (cargando()) {
+    <p class="state-message">Cargando resumen…</p>
+  } @else if (error()) {
+    <p class="state-message error">{{ error() }}</p>
+  } @else {
+    <div class="summary-row">
+      <div class="summary-card">
+        <span class="summary-label">Total adeudado</span>
+        <span class="summary-value mono debt">{{ formatoColones(totalAdeudado()) }}</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">Clientes con saldo</span>
+        <span class="summary-value mono">{{ clientesConDeuda() }}</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">Clientes totales</span>
+        <span class="summary-value mono">{{ clientes().length }}</span>
+      </div>
+    </div>
+
+    <h2 style="font-size: 16px; margin-bottom: 12px;">Clientes con mayor saldo</h2>
+
+    @if (clientesTop().length === 0) {
+      <p class="state-message">No hay clientes con saldo pendiente ahora mismo.</p>
+    } @else {
+      <div class="ledger">
+        @for (cliente of clientesTop(); track cliente.id) {
+          <div class="ledger-row">
+            <span class="ledger-nombre">{{ cliente.nombre }}</span>
+            <span class="ledger-saldo mono debt">{{ formatoColones(cliente.saldoActual) }}</span>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

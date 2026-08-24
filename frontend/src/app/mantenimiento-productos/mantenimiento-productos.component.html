@@ -1,0 +1,54 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Mantenimiento de productos</h1>
+    @if (!mostrarFormulario()) {
+      <button class="btn-primary" (click)="nuevoProducto()">+ Nuevo producto</button>
+    }
+  </div>
+
+  @if (error()) {
+    <p class="error-message">{{ error() }}</p>
+  }
+
+  @if (mostrarFormulario()) {
+    <div class="form-card">
+      <form [formGroup]="form" (ngSubmit)="guardar()">
+        <div class="form-row">
+          <div class="form-field">
+            <label for="nombre">Nombre *</label>
+            <input id="nombre" type="text" class="form-input" formControlName="nombre" />
+          </div>
+          <div class="form-field">
+            <label for="precio">Precio (₡) *</label>
+            <input id="precio" type="number" min="1" class="form-input" formControlName="precio" />
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" [disabled]="guardando()">
+            {{ guardando() ? 'Guardando…' : 'Guardar' }}
+          </button>
+          <button type="button" class="btn-ghost" (click)="cancelar()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  }
+
+  @if (cargando()) {
+    <p class="state-message">Cargando productos…</p>
+  } @else if (productos().length === 0) {
+    <p class="state-message">Todavía no hay productos registrados.</p>
+  } @else {
+    <div class="ledger">
+      @for (producto of productos(); track producto.id) {
+        <div class="ledger-row">
+          <span class="ledger-nombre">{{ producto.nombre }}</span>
+          <div class="ledger-actions" style="align-items: center;">
+            <span class="mono" style="font-size: 14px;">{{ formatoColones(producto.precio) }}</span>
+            <button class="btn-ghost" (click)="editar(producto)">Editar</button>
+            <button class="btn-danger" (click)="desactivar(producto)">Desactivar</button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

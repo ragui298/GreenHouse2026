@@ -1,0 +1,74 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Mantenimiento de usuarios</h1>
+    @if (!mostrarFormulario()) {
+      <button class="btn-primary" (click)="nuevoUsuario()">+ Nuevo usuario</button>
+    }
+  </div>
+
+  @if (error()) {
+    <p class="error-message">{{ error() }}</p>
+  }
+
+  @if (mostrarFormulario()) {
+    <div class="form-card">
+      <form [formGroup]="form" (ngSubmit)="guardar()">
+        <div class="form-row">
+          <div class="form-field">
+            <label for="username">Usuario *</label>
+            <input id="username" type="text" class="form-input" formControlName="username" />
+          </div>
+          <div class="form-field">
+            <label for="password">Contraseña *</label>
+            <input id="password" type="password" class="form-input" formControlName="password" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label for="nombreCompleto">Nombre completo *</label>
+            <input id="nombreCompleto" type="text" class="form-input" formControlName="nombreCompleto" />
+          </div>
+          <div class="form-field">
+            <label for="perfilId">Perfil *</label>
+            <select id="perfilId" class="form-select" formControlName="perfilId">
+              <option [ngValue]="null" disabled>Elegí un perfil</option>
+              @for (perfil of perfiles(); track perfil.id) {
+                <option [ngValue]="perfil.id">{{ perfil.nombre }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" [disabled]="guardando()">
+            {{ guardando() ? 'Creando…' : 'Crear usuario' }}
+          </button>
+          <button type="button" class="btn-ghost" (click)="cancelar()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  }
+
+  @if (cargando()) {
+    <p class="state-message">Cargando usuarios…</p>
+  } @else if (usuarios().length === 0) {
+    <p class="state-message">Todavía no hay usuarios registrados.</p>
+  } @else {
+    <div class="ledger">
+      @for (usuario of usuarios(); track usuario.id) {
+        <div class="ledger-row">
+          <div class="ledger-main">
+            <span class="ledger-nombre">{{ usuario.nombreCompleto }}</span>
+            <span class="ledger-extra">&#64;{{ usuario.username }}</span>
+          </div>
+          <div class="ledger-actions" style="align-items: center;">
+            <select class="form-select" [value]="usuario.perfilId" (change)="cambiarPerfil(usuario, $event)">
+              @for (perfil of perfiles(); track perfil.id) {
+                <option [value]="perfil.id">{{ perfil.nombre }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

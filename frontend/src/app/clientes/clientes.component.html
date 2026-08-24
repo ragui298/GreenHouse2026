@@ -1,0 +1,46 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Clientes</h1>
+    <input
+      type="text"
+      class="search-input"
+      placeholder="Buscar por nombre…"
+      [(ngModel)]="busqueda"
+      (ngModelChange)="busqueda.set($event)"
+    />
+  </div>
+
+  @if (cargando()) {
+    <p class="state-message">Cargando clientes…</p>
+  } @else if (error()) {
+    <p class="state-message error">{{ error() }}</p>
+  } @else if (clientesFiltrados().length === 0) {
+    <p class="state-message">
+      @if (busqueda()) {
+        No hay clientes que coincidan con "{{ busqueda() }}".
+      } @else {
+        Todavía no hay clientes registrados.
+      }
+    </p>
+  } @else {
+    <div class="ledger">
+      @for (cliente of clientesFiltrados(); track cliente.id) {
+        <div class="ledger-row">
+          <div class="ledger-main">
+            <span class="ledger-nombre">{{ cliente.nombre }}</span>
+            @if (cliente.telefono) {
+              <span class="ledger-telefono">{{ cliente.telefono }}</span>
+            }
+          </div>
+          <span
+            class="ledger-saldo mono"
+            [class.debt]="cliente.saldoActual > 0"
+            [class.paid]="cliente.saldoActual === 0"
+          >
+            {{ formatoColones(cliente.saldoActual) }}
+          </span>
+        </div>
+      }
+    </div>
+  }
+</div>
