@@ -9,6 +9,16 @@
             "projectName": "backend",
             "args": "",
             "envFile": "${workspaceFolder}/backend/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-GreenhouseBackendApplication<greenhouse-backend-backend>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.greenhouse.backend.GreenhouseBackendApplication",
+            "projectName": "greenhouse-backend-backend",
+            "args": "",
+            "envFile": "${workspaceFolder}/backend/.env"
         }
     ]
 }

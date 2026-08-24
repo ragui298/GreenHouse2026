@@ -104,8 +104,6 @@ public class AuthController {
         if (usuarioOpt.isPresent() && usuarioOpt.get().getEmail() != null && !usuarioOpt.get().getEmail().isBlank()) {
             Usuario usuario = usuarioOpt.get();
             String passwordTemporal = generarPasswordTemporal();
-            usuario.setPassword(passwordEncoder.encode(passwordTemporal));
-            usuarioRepository.save(usuario);
 
             String cuerpo = "<p>Hola " + usuario.getNombreCompleto() + ",</p>"
                     + "<p>Tu nueva contraseña temporal para Green House es:</p>"
@@ -119,6 +117,11 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                         .body("No se pudo enviar el correo en este momento. Intentá más tarde.");
             }
+
+            // Solo se persiste el cambio si el correo se envió con éxito --
+            // evita dejar la cuenta con una contraseña aleatoria que nunca llegó.
+            usuario.setPassword(passwordEncoder.encode(passwordTemporal));
+            usuarioRepository.save(usuario);
         }
 
         // Respuesta genérica siempre, exista o no el usuario/email, para no

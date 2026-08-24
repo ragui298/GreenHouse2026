@@ -45,4 +45,17 @@ public class Cliente {
     @Builder.Default
     @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Transaccion> transacciones = new ArrayList<>();
+
+    // @Builder.Default solo aplica cuando se construye vía Cliente.builder();
+    // como el controller deserializa el JSON directo al entity (bypasseando
+    // el builder), activo/fechaRegistro quedarían en null sin este hook.
+    @PrePersist
+    public void prePersist() {
+        if (activo == null) {
+            activo = true;
+        }
+        if (fechaRegistro == null) {
+            fechaRegistro = LocalDateTime.now();
+        }
+    }
 }

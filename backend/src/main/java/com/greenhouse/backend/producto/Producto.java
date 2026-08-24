@@ -35,4 +35,14 @@ public class Producto {
     @Builder.Default
     @Column(nullable = false)
     private Boolean activo = true;
+
+    // @Builder.Default solo aplica vía Producto.builder(); el controller
+    // deserializa el JSON directo al entity, así que sin este hook 'activo'
+    // quedaría en null cuando no se manda explícitamente.
+    @PrePersist
+    public void prePersist() {
+        if (activo == null) {
+            activo = true;
+        }
+    }
 }
