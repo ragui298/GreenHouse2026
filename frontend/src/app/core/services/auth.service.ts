@@ -52,6 +52,10 @@ export class AuthService {
     return localStorage.getItem(TOKEN_KEY);
   }
 
+  forgotPassword(username: string): Observable<string> {
+    return this.http.post(`${this.apiUrl}/forgot-password`, { username }, { responseType: 'text' });
+  }
+
   // Indica si el perfil del usuario logueado tiene acceso al recurso dado
   // (ej. 'CLIENTES', 'PRODUCTOS', 'USUARIOS'). Se usa para mostrar/ocultar
   // secciones del menú -- el bloqueo real ya lo hace el backend.

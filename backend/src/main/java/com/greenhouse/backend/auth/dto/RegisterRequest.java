@@ -14,6 +14,9 @@ public class RegisterRequest {
     @NotBlank
     private String nombreCompleto;
 
+    // Usado para recuperación de contraseña. Opcional.
+    private String email;
+
     // Opcional: si no se indica, se asigna el perfil "ADMIN" (creado
     // automáticamente al arrancar la app con acceso a todos los recursos).
     private Long perfilId;

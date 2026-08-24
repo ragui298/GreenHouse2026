@@ -29,6 +29,9 @@ public class Usuario {
     @Column(nullable = false)
     private String nombreCompleto;
 
+    // Usado para enviar la contraseña temporal en la recuperación de acceso.
+    private String email;
+
     // El perfil define qué recursos (módulos) puede ver este usuario.
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "perfil_id", nullable = false)

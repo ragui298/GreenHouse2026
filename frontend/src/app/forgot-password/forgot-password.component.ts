@@ -1,27 +1,26 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
 
 @Component({
-  selector: 'app-login',
+  selector: 'app-forgot-password',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
-  templateUrl: './login.component.html',
-  styleUrl: './login.component.css'
+  templateUrl: './forgot-password.component.html',
+  styleUrl: './forgot-password.component.css'
 })
-export class LoginComponent {
+export class ForgotPasswordComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
-  private readonly router = inject(Router);
 
   readonly cargando = signal(false);
   readonly error = signal<string | null>(null);
+  readonly enviado = signal(false);
 
   readonly form = this.fb.group({
-    username: ['', [Validators.required]],
-    password: ['', [Validators.required]]
+    username: ['', [Validators.required]]
   });
 
   onSubmit(): void {
@@ -33,16 +32,17 @@ export class LoginComponent {
     this.cargando.set(true);
     this.error.set(null);
 
-    const { username, password } = this.form.getRawValue();
+    const { username } = this.form.getRawValue();
 
-    this.authService.login({ username: username!, password: password! }).subscribe({
+    this.authService.forgotPassword(username!).subscribe({
       next: () => {
-        this.router.navigate(['/dashboard']);
+        this.cargando.set(false);
+        this.enviado.set(true);
       },
       error: (err) => {
         this.cargando.set(false);
-        if (err.status === 401 || err.status === 403) {
-          this.error.set('Usuario o contraseña incorrectos.');
+        if (err.status === 503) {
+          this.error.set('El servicio de correo no está disponible en este momento. Intentá más tarde.');
         } else {
           this.error.set('No se pudo conectar con el servidor. Intentá de nuevo.');
         }
