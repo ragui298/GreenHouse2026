@@ -53,6 +53,13 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
+// Solo nos interesa el jar ejecutable de Spring Boot (bootJar); sin esto
+// Gradle también genera un -plain.jar que complica copiar "el jar" al
+// construir la imagen Docker para el despliegue.
+tasks.named('jar') {
+    enabled = false
+}
+
 // Asegura los nombres de parámetros disponibles vía reflection (los necesita
 // Spring para @RequestParam/@PathVariable sin nombre explícito). Gradle ya lo
 // hace por defecto en proyectos Spring Boot, pero lo dejamos explícito porque
