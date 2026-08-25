@@ -1,6 +1,5 @@
 package com.greenhouse.backend.config;
 
-import com.greenhouse.backend.usuario.Usuario;
 import com.greenhouse.backend.usuario.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -28,8 +27,8 @@ public class PermisoService {
         }
 
         return usuarioRepository.findByUsername(auth.getName())
-                .map(Usuario::getPerfil)
-                .map(perfil -> perfil.getRecursos().stream()
+                .map(usuario -> usuario.getPerfiles().stream()
+                        .flatMap(perfil -> perfil.getRecursos().stream())
                         .anyMatch(recurso -> recurso.getClave().equalsIgnoreCase(claveRecurso)))
                 .orElse(false);
     }

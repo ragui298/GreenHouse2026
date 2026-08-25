@@ -3,6 +3,8 @@ package com.greenhouse.backend.auth.dto;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class RegisterRequest {
     @NotBlank
@@ -19,5 +21,5 @@ public class RegisterRequest {
 
     // Opcional: si no se indica, se asigna el perfil "ADMIN" (creado
     // automáticamente al arrancar la app con acceso a todos los recursos).
-    private Long perfilId;
+    private List<Long> perfilIds;
 }

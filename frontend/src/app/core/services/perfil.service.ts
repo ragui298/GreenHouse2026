@@ -19,6 +19,10 @@ export class PerfilService {
     return this.http.post<Perfil>(this.apiUrl, perfil);
   }
 
+  actualizar(id: number, perfil: PerfilInput): Observable<Perfil> {
+    return this.http.put<Perfil>(`${this.apiUrl}/${id}`, perfil);
+  }
+
   asignarRecursos(id: number, recursoIds: number[]): Observable<Perfil> {
     return this.http.put<Perfil>(`${this.apiUrl}/${id}/recursos`, { recursoIds });
   }

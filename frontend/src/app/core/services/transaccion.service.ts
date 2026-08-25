@@ -14,7 +14,15 @@ export class TransaccionService {
     return this.http.post<Transaccion>(this.apiUrl, request);
   }
 
+  listarTodas(): Observable<Transaccion[]> {
+    return this.http.get<Transaccion[]>(this.apiUrl);
+  }
+
   historialCliente(clienteId: number): Observable<Transaccion[]> {
     return this.http.get<Transaccion[]>(`${this.apiUrl}/cliente/${clienteId}`);
+  }
+
+  eliminar(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 }

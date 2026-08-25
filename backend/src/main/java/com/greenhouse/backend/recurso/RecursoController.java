@@ -25,7 +25,7 @@ public class RecursoController {
     }
 
     @GetMapping("/{id}")
-    public Recurso obtener(@PathVariable Long id) {
+    public Recurso obtener(@PathVariable("id") Long id) {
         return recursoService.obtener(id);
     }
 
@@ -35,7 +35,7 @@ public class RecursoController {
     }
 
     @PutMapping("/{id}")
-    public Recurso actualizar(@PathVariable Long id, @Valid @RequestBody Recurso recurso) {
+    public Recurso actualizar(@PathVariable("id") Long id, @Valid @RequestBody Recurso recurso) {
         return recursoService.actualizar(id, recurso);
     }
 }

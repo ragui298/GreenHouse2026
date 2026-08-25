@@ -1,3 +1,6 @@
+import { Cliente } from './cliente.model';
+import { Producto } from './producto.model';
+
 export type TipoTransaccion = 'CARGO' | 'ABONO';
 
 export interface DetalleRequest {
@@ -13,10 +16,19 @@ export interface TransaccionRequest {
   detalles?: DetalleRequest[];
 }
 
+export interface DetalleTransaccion {
+  id: number;
+  producto: Producto;
+  cantidad: number;
+  subtotal: number;
+}
+
 export interface Transaccion {
   id: number;
+  cliente: Cliente;
   tipo: TipoTransaccion;
   monto: number;
   descripcion?: string;
   fecha: string;
+  detalles: DetalleTransaccion[];
 }

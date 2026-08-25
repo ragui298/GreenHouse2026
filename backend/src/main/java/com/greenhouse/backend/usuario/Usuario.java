@@ -8,6 +8,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "usuarios")
 @Data
@@ -32,9 +35,19 @@ public class Usuario {
     // Usado para enviar la contraseña temporal en la recuperación de acceso.
     private String email;
 
-    // El perfil define qué recursos (módulos) puede ver este usuario.
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "perfil_id", nullable = false)
+    private String telefono;
+
+    private String cedula;
+
+    // Los perfiles definen qué recursos (módulos) puede ver este usuario;
+    // los accesos se suman entre todos los perfiles asignados.
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "usuario_perfil",
+            joinColumns = @JoinColumn(name = "usuario_id"),
+            inverseJoinColumns = @JoinColumn(name = "perfil_id")
+    )
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    private Perfil perfil;
+    @Builder.Default
+    private Set<Perfil> perfiles = new HashSet<>();
 }

@@ -17,6 +17,10 @@ export const routes: Routes = [
     loadComponent: () => import('./shell/shell.component').then(m => m.ShellComponent),
     children: [
       {
+        path: 'home',
+        loadComponent: () => import('./home/home.component').then(m => m.HomeComponent)
+      },
+      {
         path: 'dashboard',
         loadComponent: () => import('./dashboard/dashboard.component').then(m => m.DashboardComponent)
       },
@@ -25,8 +29,16 @@ export const routes: Routes = [
         loadComponent: () => import('./clientes/clientes.component').then(m => m.ClientesComponent)
       },
       {
+        path: 'transacciones',
+        loadComponent: () => import('./transacciones/transacciones.component').then(m => m.TransaccionesComponent)
+      },
+      {
         path: 'mantenimiento/usuarios',
         loadComponent: () => import('./mantenimiento-usuarios/mantenimiento-usuarios.component').then(m => m.MantenimientoUsuariosComponent)
+      },
+      {
+        path: 'mantenimiento/perfiles',
+        loadComponent: () => import('./mantenimiento-perfiles/mantenimiento-perfiles.component').then(m => m.MantenimientoPerfilesComponent)
       },
       {
         path: 'mantenimiento/clientes',
@@ -36,7 +48,7 @@ export const routes: Routes = [
         path: 'mantenimiento/productos',
         loadComponent: () => import('./mantenimiento-productos/mantenimiento-productos.component').then(m => m.MantenimientoProductosComponent)
       },
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
+      { path: '', redirectTo: 'home', pathMatch: 'full' }
     ]
   },
   { path: '**', redirectTo: 'login' }

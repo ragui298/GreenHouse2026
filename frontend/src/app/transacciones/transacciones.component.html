@@ -1,0 +1,74 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Transacciones</h1>
+    <div style="display: flex; gap: 8px;">
+      <select class="form-select" [ngModel]="filtroTipo()" (ngModelChange)="filtroTipo.set($event)">
+        <option value="TODOS">Todos los tipos</option>
+        <option value="CARGO">Cargos</option>
+        <option value="ABONO">Abonos</option>
+      </select>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Buscar por cliente…"
+        [ngModel]="busqueda()"
+        (ngModelChange)="busqueda.set($event)"
+      />
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <p class="state-message">Cargando transacciones…</p>
+  } @else if (error()) {
+    <p class="state-message error">{{ error() }}</p>
+  } @else if (transaccionesFiltradas().length === 0) {
+    <p class="state-message">No hay transacciones que coincidan con la búsqueda.</p>
+  } @else {
+    <div class="ledger">
+      @for (t of transaccionesFiltradas(); track t.id) {
+        <div class="ledger-row" style="flex-direction: column; align-items: stretch;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <div class="ledger-main">
+              <span class="ledger-nombre">{{ t.cliente.nombre }}</span>
+              <span class="ledger-extra">{{ formatoFecha(t.fecha) }}</span>
+              @if (t.descripcion) {
+                <span class="ledger-extra">{{ t.descripcion }}</span>
+              }
+            </div>
+            <div class="ledger-actions" style="align-items: center;">
+              <span class="badge" [class.debt]="t.tipo === 'CARGO'" [class.paid]="t.tipo === 'ABONO'">
+                {{ t.tipo === 'CARGO' ? 'Cargo' : 'Abono' }}
+              </span>
+              <span
+                class="ledger-saldo mono"
+                [class.debt]="t.tipo === 'CARGO'"
+                [class.paid]="t.tipo === 'ABONO'"
+              >
+                {{ formatoColones(t.monto) }}
+              </span>
+              @if (t.detalles.length > 0) {
+                <button class="btn-ghost" (click)="toggleDetalle(t)">
+                  {{ expandidaId() === t.id ? 'Ocultar' : 'Ver productos' }}
+                </button>
+              }
+              @if (puedeEliminar) {
+                <button class="btn-danger" (click)="eliminar(t)">Eliminar</button>
+              }
+            </div>
+          </div>
+
+          @if (expandidaId() === t.id && t.detalles.length > 0) {
+            <div class="detalle-productos">
+              @for (d of t.detalles; track d.id) {
+                <div class="detalle-linea">
+                  <span>{{ d.producto.nombre }} × {{ d.cantidad }}</span>
+                  <span class="mono">{{ formatoColones(d.subtotal) }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

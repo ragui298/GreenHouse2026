@@ -1,0 +1,78 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Mantenimiento de perfiles</h1>
+    @if (!mostrarFormulario()) {
+      <button class="btn-primary" (click)="nuevoPerfil()">+ Nuevo perfil</button>
+    }
+  </div>
+
+  @if (error()) {
+    <p class="error-message">{{ error() }}</p>
+  }
+
+  @if (mostrarFormulario()) {
+    <div class="form-card">
+      <form [formGroup]="form" (ngSubmit)="guardar()">
+        <div class="form-row">
+          <div class="form-field">
+            <label for="nombre">Nombre *</label>
+            <input id="nombre" type="text" class="form-input" formControlName="nombre" placeholder="CAJERO" />
+          </div>
+          <div class="form-field">
+            <label for="descripcion">Descripción</label>
+            <input id="descripcion" type="text" class="form-input" formControlName="descripcion" />
+          </div>
+        </div>
+
+        <div class="recursos-field">
+          <label>Recursos visibles para este perfil</label>
+          <div class="recursos-grid">
+            @for (recurso of recursos(); track recurso.id) {
+              <label class="recurso-check">
+                <input
+                  type="checkbox"
+                  [checked]="recursosSeleccionados().has(recurso.id)"
+                  (change)="toggleRecurso(recurso.id, $any($event.target).checked)"
+                />
+                <span class="recurso-nombre">{{ recurso.nombre }}</span>
+                @if (recurso.descripcion) {
+                  <span class="recurso-descripcion">{{ recurso.descripcion }}</span>
+                }
+              </label>
+            }
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" [disabled]="guardando()">
+            {{ guardando() ? 'Guardando…' : 'Guardar perfil' }}
+          </button>
+          <button type="button" class="btn-ghost" (click)="cancelar()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  }
+
+  @if (cargando()) {
+    <p class="state-message">Cargando perfiles…</p>
+  } @else if (perfiles().length === 0) {
+    <p class="state-message">Todavía no hay perfiles creados.</p>
+  } @else {
+    <div class="ledger">
+      @for (perfil of perfiles(); track perfil.id) {
+        <div class="ledger-row">
+          <div class="ledger-main">
+            <span class="ledger-nombre">{{ perfil.nombre }}</span>
+            @if (perfil.descripcion) {
+              <span class="ledger-extra">{{ perfil.descripcion }}</span>
+            }
+            <span class="ledger-extra">{{ perfil.recursos.length }} recurso(s) asignado(s)</span>
+          </div>
+          <div class="ledger-actions">
+            <button class="btn-ghost" (click)="editar(perfil)">Editar</button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

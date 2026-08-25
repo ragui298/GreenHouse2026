@@ -11,7 +11,7 @@ public class LoginResponse {
     private String token;
     private String username;
     private String nombreCompleto;
-    private String perfil;
+    private List<String> perfiles;
     // Claves de los recursos que el perfil de este usuario puede ver
     // (ej. ["CLIENTES", "TRANSACCIONES"]). El frontend usa esto para
     // decidir qué mostrar en el menú.

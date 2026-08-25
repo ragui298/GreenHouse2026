@@ -30,17 +30,18 @@ public class TransaccionController {
     }
 
     @GetMapping("/cliente/{clienteId}")
-    public List<Transaccion> historial(@PathVariable Long clienteId) {
+    public List<Transaccion> historial(@PathVariable("clienteId") Long clienteId) {
         return transaccionService.historialCliente(clienteId);
     }
 
     @GetMapping("/cliente/{clienteId}/saldo")
-    public BigDecimal saldo(@PathVariable Long clienteId) {
+    public BigDecimal saldo(@PathVariable("clienteId") Long clienteId) {
         return transaccionService.saldoCliente(clienteId);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+    @PreAuthorize("@permisoService.tieneAcceso('TRANSACCIONES_ELIMINAR')")
+    public ResponseEntity<Void> eliminar(@PathVariable("id") Long id) {
         transaccionService.eliminar(id);
         return ResponseEntity.noContent().build();
     }

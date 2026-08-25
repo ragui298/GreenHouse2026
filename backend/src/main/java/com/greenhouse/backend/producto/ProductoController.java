@@ -28,17 +28,17 @@ public class ProductoController {
     }
 
     @GetMapping("/{id}")
-    public Producto obtener(@PathVariable Long id) {
+    public Producto obtener(@PathVariable("id") Long id) {
         return productoService.obtener(id);
     }
 
     @PutMapping("/{id}")
-    public Producto actualizar(@PathVariable Long id, @Valid @RequestBody Producto producto) {
+    public Producto actualizar(@PathVariable("id") Long id, @Valid @RequestBody Producto producto) {
         return productoService.actualizar(id, producto);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> desactivar(@PathVariable Long id) {
+    public ResponseEntity<Void> desactivar(@PathVariable("id") Long id) {
         productoService.desactivar(id);
         return ResponseEntity.noContent().build();
     }

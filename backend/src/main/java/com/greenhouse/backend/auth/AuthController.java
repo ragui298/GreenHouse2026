@@ -25,8 +25,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.SecureRandom;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -43,26 +45,33 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
 
-    // Registro solo pensado para crear al primer dueño/admin.
-    // En producción, protegé o eliminá este endpoint tras crear el usuario inicial.
+    // Solo sirve para crear el primer usuario (dueño/admin) en una instalación
+    // nueva, por eso es público (permitAll en SecurityConfig) -- no hay nadie
+    // logueado todavía para autenticar la creación. En cuanto existe un
+    // usuario se cierra: crear más usuarios pasa por POST /api/usuarios,
+    // que sí exige sesión y el recurso "USUARIOS_CREAR".
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+        if (usuarioRepository.count() > 0) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Ya existe al menos un usuario. Creá usuarios nuevos desde Mantenimiento de usuarios.");
+        }
+
         if (usuarioRepository.existsByUsername(request.getUsername())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("El usuario ya existe");
         }
 
-        Perfil perfil = (request.getPerfilId() != null)
-                ? perfilRepository.findById(request.getPerfilId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Perfil no encontrado: " + request.getPerfilId()))
-                : perfilRepository.findByNombre("ADMIN")
+        Set<Perfil> perfiles = (request.getPerfilIds() != null && !request.getPerfilIds().isEmpty())
+                ? new HashSet<>(perfilRepository.findAllById(request.getPerfilIds()))
+                : Set.of(perfilRepository.findByNombre("ADMIN")
                         .orElseThrow(() -> new IllegalStateException(
-                                "No existe el perfil ADMIN por defecto. Revisá que DataSeeder haya corrido."));
+                                "No existe el perfil ADMIN por defecto. Revisá que DataSeeder haya corrido.")));
 
         Usuario usuario = Usuario.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .nombreCompleto(request.getNombreCompleto())
-                .perfil(perfil)
+                .perfiles(perfiles)
                 .build();
 
         usuarioRepository.save(usuario);
@@ -77,22 +86,30 @@ public class AuthController {
 
         Usuario usuario = usuarioRepository.findByUsername(request.getUsername()).orElseThrow();
 
+        String[] authorities = usuario.getPerfiles().stream()
+                .map(perfil -> "ROLE_" + perfil.getNombre())
+                .toArray(String[]::new);
         UserDetails userDetails = org.springframework.security.core.userdetails.User
                 .withUsername(request.getUsername())
                 .password("")
-                .authorities("ROLE_" + usuario.getPerfil().getNombre())
+                .authorities(authorities)
                 .build();
 
         String token = jwtUtil.generateToken(userDetails);
-        List<String> claves = usuario.getPerfil().getRecursos().stream()
+        List<String> claves = usuario.getPerfiles().stream()
+                .flatMap(perfil -> perfil.getRecursos().stream())
                 .map(Recurso::getClave)
+                .distinct()
+                .toList();
+        List<String> nombresPerfiles = usuario.getPerfiles().stream()
+                .map(Perfil::getNombre)
                 .toList();
 
         return ResponseEntity.ok(new LoginResponse(
                 token,
                 usuario.getUsername(),
                 usuario.getNombreCompleto(),
-                usuario.getPerfil().getNombre(),
+                nombresPerfiles,
                 claves
         ));
     }

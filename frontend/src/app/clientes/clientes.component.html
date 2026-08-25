@@ -25,20 +25,95 @@
   } @else {
     <div class="ledger">
       @for (cliente of clientesFiltrados(); track cliente.id) {
-        <div class="ledger-row">
-          <div class="ledger-main">
-            <span class="ledger-nombre">{{ cliente.nombre }}</span>
-            @if (cliente.telefono) {
-              <span class="ledger-telefono">{{ cliente.telefono }}</span>
-            }
+        <div class="ledger-row" style="flex-direction: column; align-items: stretch;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <div class="ledger-main">
+              <span class="ledger-nombre">{{ cliente.nombre }}</span>
+              @if (cliente.telefono) {
+                <span class="ledger-telefono">{{ cliente.telefono }}</span>
+              }
+            </div>
+            <div class="ledger-actions" style="align-items: center;">
+              <span
+                class="ledger-saldo mono"
+                [class.debt]="cliente.saldoActual > 0"
+                [class.paid]="cliente.saldoActual === 0"
+              >
+                {{ formatoColones(cliente.saldoActual) }}
+              </span>
+              @if (puedeRegistrarTransaccion) {
+                <button class="btn-ghost" (click)="abrirRegistro(cliente)">Registrar transacción</button>
+              }
+            </div>
           </div>
-          <span
-            class="ledger-saldo mono"
-            [class.debt]="cliente.saldoActual > 0"
-            [class.paid]="cliente.saldoActual === 0"
-          >
-            {{ formatoColones(cliente.saldoActual) }}
-          </span>
+
+          @if (registrandoClienteId() === cliente.id) {
+            <div class="form-card" style="margin-top: 12px; margin-bottom: 0;">
+              @if (errorTransaccion()) {
+                <p class="error-message">{{ errorTransaccion() }}</p>
+              }
+
+              <div class="form-row">
+                <div class="form-field">
+                  <label>Tipo</label>
+                  <select class="form-select" [ngModel]="tipo()" (ngModelChange)="cambiarTipo($event)">
+                    <option value="CARGO">Cargo (fía)</option>
+                    <option value="ABONO">Abono (paga)</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label>Descripción</label>
+                  <input type="text" class="form-input" [ngModel]="descripcion()" (ngModelChange)="descripcion.set($event)" placeholder="Opcional" />
+                </div>
+              </div>
+
+              @if (tipo() === 'CARGO') {
+                <div class="form-field" style="margin-bottom: 10px;">
+                  <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <input type="checkbox" [ngModel]="usarProductos()" (ngModelChange)="usarProductos.set($event)" />
+                    Elegir productos del catálogo
+                  </label>
+                </div>
+              }
+
+              @if (tipo() === 'CARGO' && usarProductos()) {
+                <div class="checklist-field">
+                  @for (linea of lineas(); track $index) {
+                    <div class="form-row" style="align-items: flex-end;">
+                      <div class="form-field">
+                        <label>Producto</label>
+                        <select class="form-select" [ngModel]="linea.productoId" (ngModelChange)="actualizarLineaProducto($index, $event)">
+                          <option [ngValue]="null" disabled>Elegí un producto</option>
+                          @for (producto of productos(); track producto.id) {
+                            <option [ngValue]="producto.id">{{ producto.nombre }} — {{ formatoColones(producto.precio) }}</option>
+                          }
+                        </select>
+                      </div>
+                      <div class="form-field" style="max-width: 100px;">
+                        <label>Cantidad</label>
+                        <input type="number" min="1" class="form-input" [ngModel]="linea.cantidad" (ngModelChange)="actualizarLineaCantidad($index, $event)" />
+                      </div>
+                      <button type="button" class="btn-ghost" (click)="quitarLinea($index)">Quitar</button>
+                    </div>
+                  }
+                  <button type="button" class="btn-ghost" (click)="agregarLinea()">+ Agregar producto</button>
+                  <p class="state-message" style="padding: 8px 0; text-align: left;">Total: <strong>{{ formatoColones(montoCalculado()) }}</strong></p>
+                </div>
+              } @else {
+                <div class="form-field">
+                  <label>Monto</label>
+                  <input type="number" min="1" class="form-input" [ngModel]="montoSimple()" (ngModelChange)="montoSimple.set($event)" placeholder="0" />
+                </div>
+              }
+
+              <div class="form-actions">
+                <button type="button" class="btn-primary" [disabled]="guardandoTransaccion()" (click)="guardarTransaccion(cliente)">
+                  {{ guardandoTransaccion() ? 'Guardando…' : 'Guardar transacción' }}
+                </button>
+                <button type="button" class="btn-ghost" (click)="cancelarRegistro()">Cancelar</button>
+              </div>
+            </div>
+          }
         </div>
       }
     </div>

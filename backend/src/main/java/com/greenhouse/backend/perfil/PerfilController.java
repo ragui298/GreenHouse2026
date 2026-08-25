@@ -27,7 +27,7 @@ public class PerfilController {
     }
 
     @GetMapping("/{id}")
-    public Perfil obtener(@PathVariable Long id) {
+    public Perfil obtener(@PathVariable("id") Long id) {
         return perfilService.obtener(id);
     }
 
@@ -37,13 +37,13 @@ public class PerfilController {
     }
 
     @PutMapping("/{id}")
-    public Perfil actualizar(@PathVariable Long id, @Valid @RequestBody PerfilRequest request) {
+    public Perfil actualizar(@PathVariable("id") Long id, @Valid @RequestBody PerfilRequest request) {
         return perfilService.actualizar(id, request);
     }
 
     // Reemplaza por completo el conjunto de recursos visibles para este perfil.
     @PutMapping("/{id}/recursos")
-    public Perfil asignarRecursos(@PathVariable Long id, @Valid @RequestBody AsignarRecursosRequest request) {
+    public Perfil asignarRecursos(@PathVariable("id") Long id, @Valid @RequestBody AsignarRecursosRequest request) {
         return perfilService.asignarRecursos(id, request);
     }
 }

@@ -1,0 +1,47 @@
+.home-page {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.home-saludo {
+  font-size: 15px;
+  color: var(--color-ink-soft);
+  margin: 0;
+}
+
+.home-frase {
+  max-width: 560px;
+  margin: 0;
+  font-family: var(--font-display, 'Georgia', serif);
+  font-style: italic;
+  font-size: 26px;
+  line-height: 1.5;
+  color: var(--color-ink);
+  border: none;
+  position: relative;
+}
+
+.home-frase::before,
+.home-frase::after {
+  color: var(--color-primary-light);
+  font-size: 32px;
+  font-style: normal;
+  line-height: 0;
+  vertical-align: -6px;
+}
+
+.home-frase::before {
+  content: '“';
+  margin-right: 4px;
+}
+
+.home-frase::after {
+  content: '”';
+  margin-left: 4px;
+}

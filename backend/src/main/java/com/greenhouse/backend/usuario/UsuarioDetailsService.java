@@ -18,10 +18,14 @@ public class UsuarioDetailsService implements UserDetailsService {
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
 
+        String[] roles = usuario.getPerfiles().stream()
+                .map(perfil -> perfil.getNombre())
+                .toArray(String[]::new);
+
         return User.builder()
                 .username(usuario.getUsername())
                 .password(usuario.getPassword())
-                .roles(usuario.getPerfil().getNombre())
+                .roles(roles)
                 .build();
     }
 }

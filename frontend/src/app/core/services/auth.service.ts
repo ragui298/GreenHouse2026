@@ -6,7 +6,8 @@ import { LoginRequest, LoginResponse } from '../models/auth.model';
 
 const TOKEN_KEY = 'greenhouse_token';
 const USER_KEY = 'greenhouse_user';
-const PERFIL_KEY = 'greenhouse_perfil';
+const USERNAME_KEY = 'greenhouse_username';
+const PERFILES_KEY = 'greenhouse_perfiles';
 const RECURSOS_KEY = 'greenhouse_recursos';
 
 @Injectable({ providedIn: 'root' })
@@ -14,11 +15,13 @@ export class AuthService {
   private readonly apiUrl = `${environment.apiUrl}/auth`;
 
   private readonly _nombreCompleto = signal<string | null>(localStorage.getItem(USER_KEY));
-  private readonly _perfil = signal<string | null>(localStorage.getItem(PERFIL_KEY));
-  private readonly _recursos = signal<string[]>(this.leerRecursosGuardados());
+  private readonly _username = signal<string | null>(localStorage.getItem(USERNAME_KEY));
+  private readonly _perfiles = signal<string[]>(this.leerListaGuardada(PERFILES_KEY));
+  private readonly _recursos = signal<string[]>(this.leerListaGuardada(RECURSOS_KEY));
 
   readonly nombreCompleto = computed(() => this._nombreCompleto());
-  readonly perfil = computed(() => this._perfil());
+  readonly username = computed(() => this._username());
+  readonly perfiles = computed(() => this._perfiles());
   readonly recursos = computed(() => this._recursos());
   readonly estaAutenticado = computed(() => !!this.getToken());
 
@@ -29,10 +32,12 @@ export class AuthService {
       tap((respuesta) => {
         localStorage.setItem(TOKEN_KEY, respuesta.token);
         localStorage.setItem(USER_KEY, respuesta.nombreCompleto);
-        localStorage.setItem(PERFIL_KEY, respuesta.perfil);
+        localStorage.setItem(USERNAME_KEY, respuesta.username);
+        localStorage.setItem(PERFILES_KEY, JSON.stringify(respuesta.perfiles ?? []));
         localStorage.setItem(RECURSOS_KEY, JSON.stringify(respuesta.recursos ?? []));
         this._nombreCompleto.set(respuesta.nombreCompleto);
-        this._perfil.set(respuesta.perfil);
+        this._username.set(respuesta.username);
+        this._perfiles.set(respuesta.perfiles ?? []);
         this._recursos.set(respuesta.recursos ?? []);
       })
     );
@@ -41,10 +46,12 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
-    localStorage.removeItem(PERFIL_KEY);
+    localStorage.removeItem(USERNAME_KEY);
+    localStorage.removeItem(PERFILES_KEY);
     localStorage.removeItem(RECURSOS_KEY);
     this._nombreCompleto.set(null);
-    this._perfil.set(null);
+    this._username.set(null);
+    this._perfiles.set([]);
     this._recursos.set([]);
   }
 
@@ -63,8 +70,8 @@ export class AuthService {
     return this._recursos().includes(claveRecurso);
   }
 
-  private leerRecursosGuardados(): string[] {
-    const guardado = localStorage.getItem(RECURSOS_KEY);
+  private leerListaGuardada(key: string): string[] {
+    const guardado = localStorage.getItem(key);
     if (!guardado) return [];
     try {
       return JSON.parse(guardado);

@@ -19,7 +19,7 @@ public class ClienteController {
     private final ClienteService clienteService;
 
     @GetMapping
-    public List<ClienteDTO> listar(@RequestParam(required = false) String nombre) {
+    public List<ClienteDTO> listar(@RequestParam(name = "nombre", required = false) String nombre) {
         if (nombre != null && !nombre.isBlank()) {
             return clienteService.buscar(nombre);
         }
@@ -27,22 +27,25 @@ public class ClienteController {
     }
 
     @GetMapping("/{id}")
-    public ClienteDTO obtener(@PathVariable Long id) {
+    public ClienteDTO obtener(@PathVariable("id") Long id) {
         return clienteService.obtenerConSaldo(id);
     }
 
     @PostMapping
+    @PreAuthorize("@permisoService.tieneAcceso('MANTENIMIENTO_CLIENTES')")
     public ResponseEntity<Cliente> crear(@Valid @RequestBody Cliente cliente) {
         return ResponseEntity.status(HttpStatus.CREATED).body(clienteService.crear(cliente));
     }
 
     @PutMapping("/{id}")
-    public Cliente actualizar(@PathVariable Long id, @Valid @RequestBody Cliente cliente) {
+    @PreAuthorize("@permisoService.tieneAcceso('MANTENIMIENTO_CLIENTES')")
+    public Cliente actualizar(@PathVariable("id") Long id, @Valid @RequestBody Cliente cliente) {
         return clienteService.actualizar(id, cliente);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> desactivar(@PathVariable Long id) {
+    @PreAuthorize("@permisoService.tieneAcceso('MANTENIMIENTO_CLIENTES')")
+    public ResponseEntity<Void> desactivar(@PathVariable("id") Long id) {
         clienteService.desactivar(id);
         return ResponseEntity.noContent().build();
     }

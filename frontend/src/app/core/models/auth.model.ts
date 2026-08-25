@@ -7,6 +7,6 @@ export interface LoginResponse {
   token: string;
   username: string;
   nombreCompleto: string;
-  perfil: string;
+  perfiles: string[];
   recursos: string[];
 }

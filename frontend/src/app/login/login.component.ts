@@ -37,7 +37,7 @@ export class LoginComponent {
 
     this.authService.login({ username: username!, password: password! }).subscribe({
       next: () => {
-        this.router.navigate(['/dashboard']);
+        this.router.navigate(['/home']);
       },
       error: (err) => {
         this.cargando.set(false);

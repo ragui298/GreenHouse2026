@@ -1,7 +1,7 @@
 <div class="page">
   <div class="page-header">
     <h1>Mantenimiento de usuarios</h1>
-    @if (!mostrarFormulario()) {
+    @if (!mostrarFormulario() && puedeCrearUsuario) {
       <button class="btn-primary" (click)="nuevoUsuario()">+ Nuevo usuario</button>
     }
   </div>
@@ -28,16 +28,24 @@
             <label for="nombreCompleto">Nombre completo *</label>
             <input id="nombreCompleto" type="text" class="form-input" formControlName="nombreCompleto" />
           </div>
-          <div class="form-field">
-            <label for="perfilId">Perfil *</label>
-            <select id="perfilId" class="form-select" formControlName="perfilId">
-              <option [ngValue]="null" disabled>Elegí un perfil</option>
-              @for (perfil of perfiles(); track perfil.id) {
-                <option [ngValue]="perfil.id">{{ perfil.nombre }}</option>
-              }
-            </select>
+        </div>
+
+        <div class="checklist-field">
+          <label>Perfiles *</label>
+          <div class="checklist-grid">
+            @for (perfil of perfiles(); track perfil.id) {
+              <label class="checklist-item">
+                <input
+                  type="checkbox"
+                  [checked]="perfilesSeleccionados().has(perfil.id)"
+                  (change)="toggleNuevoPerfil(perfil.id, $any($event.target).checked)"
+                />
+                <span class="checklist-nombre">{{ perfil.nombre }}</span>
+              </label>
+            }
           </div>
         </div>
+
         <div class="form-actions">
           <button type="submit" class="btn-primary" [disabled]="guardando()">
             {{ guardando() ? 'Creando…' : 'Crear usuario' }}
@@ -55,18 +63,80 @@
   } @else {
     <div class="ledger">
       @for (usuario of usuarios(); track usuario.id) {
-        <div class="ledger-row">
-          <div class="ledger-main">
-            <span class="ledger-nombre">{{ usuario.nombreCompleto }}</span>
-            <span class="ledger-extra">&#64;{{ usuario.username }}</span>
-          </div>
-          <div class="ledger-actions" style="align-items: center;">
-            <select class="form-select" [value]="usuario.perfilId" (change)="cambiarPerfil(usuario, $event)">
-              @for (perfil of perfiles(); track perfil.id) {
-                <option [value]="perfil.id">{{ perfil.nombre }}</option>
+        <div class="ledger-row" style="flex-direction: column; align-items: stretch;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <div class="ledger-main">
+              <span class="ledger-nombre">{{ usuario.nombreCompleto }}</span>
+              <span class="ledger-extra">&#64;{{ usuario.username }}</span>
+              @if (usuario.telefono) {
+                <span class="ledger-extra">Tel: {{ usuario.telefono }}</span>
               }
-            </select>
+              @if (usuario.cedula) {
+                <span class="ledger-extra">Cédula: {{ usuario.cedula }}</span>
+              }
+              <span class="ledger-extra">{{ usuario.perfiles.map(p => p.nombre).join(', ') }}</span>
+            </div>
+            <div class="ledger-actions">
+              <button class="btn-ghost" (click)="editarDatos(usuario)">Editar</button>
+              <button class="btn-ghost" (click)="editarPerfiles(usuario)">Editar perfiles</button>
+            </div>
           </div>
+
+          @if (editandoDatosId() === usuario.id) {
+            <div class="form-card" style="margin-top: 12px; margin-bottom: 0;">
+              <form [formGroup]="editForm" (ngSubmit)="guardarDatos(usuario)">
+                <div class="form-row">
+                  <div class="form-field">
+                    <label for="edit-nombreCompleto-{{usuario.id}}">Nombre completo *</label>
+                    <input id="edit-nombreCompleto-{{usuario.id}}" type="text" class="form-input" formControlName="nombreCompleto" />
+                  </div>
+                  <div class="form-field">
+                    <label for="edit-password-{{usuario.id}}">Contraseña nueva</label>
+                    <input id="edit-password-{{usuario.id}}" type="password" class="form-input" formControlName="password" placeholder="Dejar en blanco para no cambiarla" />
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-field">
+                    <label for="edit-telefono-{{usuario.id}}">Teléfono</label>
+                    <input id="edit-telefono-{{usuario.id}}" type="text" class="form-input" formControlName="telefono" />
+                  </div>
+                  <div class="form-field">
+                    <label for="edit-cedula-{{usuario.id}}">Cédula</label>
+                    <input id="edit-cedula-{{usuario.id}}" type="text" class="form-input" formControlName="cedula" />
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button type="submit" class="btn-primary" [disabled]="guardandoDatos()">
+                    {{ guardandoDatos() ? 'Guardando…' : 'Guardar cambios' }}
+                  </button>
+                  <button type="button" class="btn-ghost" (click)="cancelarEdicionDatos()">Cancelar</button>
+                </div>
+              </form>
+            </div>
+          }
+
+          @if (editandoPerfilesId() === usuario.id) {
+            <div class="checklist-field" style="margin-top: 12px;">
+              <div class="checklist-grid">
+                @for (perfil of perfiles(); track perfil.id) {
+                  <label class="checklist-item">
+                    <input
+                      type="checkbox"
+                      [checked]="perfilesEnEdicion().has(perfil.id)"
+                      (change)="toggleEdicionPerfil(perfil.id, $any($event.target).checked)"
+                    />
+                    <span class="checklist-nombre">{{ perfil.nombre }}</span>
+                  </label>
+                }
+              </div>
+              <div class="form-actions">
+                <button class="btn-primary" [disabled]="guardandoPerfiles()" (click)="guardarPerfiles(usuario)">
+                  {{ guardandoPerfiles() ? 'Guardando…' : 'Guardar perfiles' }}
+                </button>
+                <button class="btn-ghost" (click)="cancelarEdicionPerfiles()">Cancelar</button>
+              </div>
+            </div>
+          }
         </div>
       }
     </div>
