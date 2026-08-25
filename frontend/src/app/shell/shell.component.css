@@ -109,6 +109,10 @@
   overflow-y: auto;
 }
 
+.mobile-logout-btn {
+  display: none;
+}
+
 @media (max-width: 720px) {
   .shell { flex-direction: column; }
   .sidebar {
@@ -123,4 +127,24 @@
   .nav { flex-direction: row; padding: 0; }
   .nav-link span { display: none; }
   .sidebar-footer { display: none; }
+
+  .mobile-logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: var(--radius-sm);
+    color: #fff;
+    cursor: pointer;
+    margin-left: auto;
+  }
+
+  .mobile-logout-btn:hover {
+    background: rgba(255, 255, 255, 0.16);
+  }
 }
