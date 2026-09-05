@@ -33,6 +33,12 @@ public class Cliente {
 
     private String cedula;
 
+    // Jornada del cliente: Primaria, Secundaria o Nocturno. Nullable porque
+    // los clientes históricos (previos a esta clasificación) todavía pueden
+    // no tenerlo asignado -- ver migración en DataSeeder.
+    @Enumerated(EnumType.STRING)
+    private TipoCliente tipoCliente;
+
     @Builder.Default
     @Column(nullable = false)
     private Boolean activo = true;

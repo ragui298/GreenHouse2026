@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ClienteService } from '../core/services/cliente.service';
-import { Cliente } from '../core/models/cliente.model';
+import { Cliente, TipoCliente, TIPOS_CLIENTE } from '../core/models/cliente.model';
 
 @Component({
   selector: 'app-mantenimiento-clientes',
@@ -21,11 +21,13 @@ export class MantenimientoClientesComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly editandoId = signal<number | null>(null);
   readonly mostrarFormulario = signal(false);
+  readonly tiposCliente = TIPOS_CLIENTE;
 
   readonly form = this.fb.group({
     nombre: ['', [Validators.required]],
     telefono: [''],
-    cedula: ['']
+    cedula: [''],
+    tipoCliente: [null as TipoCliente | null, [Validators.required]]
   });
 
   ngOnInit(): void {
@@ -57,7 +59,8 @@ export class MantenimientoClientesComponent implements OnInit {
     this.form.setValue({
       nombre: cliente.nombre,
       telefono: cliente.telefono ?? '',
-      cedula: cliente.cedula ?? ''
+      cedula: cliente.cedula ?? '',
+      tipoCliente: cliente.tipoCliente ?? null
     });
     this.mostrarFormulario.set(true);
   }
@@ -80,7 +83,8 @@ export class MantenimientoClientesComponent implements OnInit {
     const datos = {
       nombre: this.form.value.nombre!,
       telefono: this.form.value.telefono || undefined,
-      cedula: this.form.value.cedula || undefined
+      cedula: this.form.value.cedula || undefined,
+      tipoCliente: this.form.value.tipoCliente ?? undefined
     };
 
     const id = this.editandoId();
@@ -99,6 +103,10 @@ export class MantenimientoClientesComponent implements OnInit {
         this.error.set('No se pudo guardar el cliente.');
       }
     });
+  }
+
+  etiquetaTipo(tipo?: TipoCliente): string {
+    return this.tiposCliente.find(t => t.valor === tipo)?.etiqueta ?? 'Sin jornada';
   }
 
   desactivar(cliente: Cliente): void {

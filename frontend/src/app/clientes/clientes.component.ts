@@ -5,7 +5,7 @@ import { ClienteService } from '../core/services/cliente.service';
 import { ProductoService } from '../core/services/producto.service';
 import { TransaccionService } from '../core/services/transaccion.service';
 import { AuthService } from '../core/services/auth.service';
-import { Cliente } from '../core/models/cliente.model';
+import { Cliente, TipoCliente, TIPOS_CLIENTE } from '../core/models/cliente.model';
 import { Producto } from '../core/models/producto.model';
 import { TipoTransaccion } from '../core/models/transaccion.model';
 
@@ -33,6 +33,8 @@ export class ClientesComponent implements OnInit {
   readonly cargando = signal(true);
   readonly error = signal<string | null>(null);
   readonly busqueda = signal('');
+  readonly filtroTipo = signal<TipoCliente | 'TODOS'>('TODOS');
+  readonly tiposCliente = TIPOS_CLIENTE;
 
   readonly productos = signal<Producto[]>([]);
   readonly registrandoClienteId = signal<number | null>(null);
@@ -47,10 +49,17 @@ export class ClientesComponent implements OnInit {
 
   readonly clientesFiltrados = computed(() => {
     const termino = this.busqueda().trim().toLowerCase();
-    const lista = this.clientes();
-    if (!termino) return lista;
-    return lista.filter(c => c.nombre.toLowerCase().includes(termino));
+    const tipo = this.filtroTipo();
+    return this.clientes().filter(c => {
+      const coincideNombre = !termino || c.nombre.toLowerCase().includes(termino);
+      const coincideTipo = tipo === 'TODOS' || c.tipoCliente === tipo;
+      return coincideNombre && coincideTipo;
+    });
   });
+
+  etiquetaTipo(tipo?: TipoCliente): string {
+    return this.tiposCliente.find(t => t.valor === tipo)?.etiqueta ?? 'Sin jornada';
+  }
 
   readonly montoCalculado = computed(() => {
     if (!this.usarProductos()) return this.montoSimple() ?? 0;
