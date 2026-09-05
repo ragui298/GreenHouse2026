@@ -26,6 +26,15 @@
             <label for="cedula">Cédula</label>
             <input id="cedula" type="text" class="form-input" formControlName="cedula" />
           </div>
+          <div class="form-field">
+            <label for="tipoCliente">Jornada *</label>
+            <select id="tipoCliente" class="form-select" formControlName="tipoCliente">
+              <option [ngValue]="null" disabled>Elegí una jornada</option>
+              @for (tipo of tiposCliente; track tipo.valor) {
+                <option [ngValue]="tipo.valor">{{ tipo.etiqueta }}</option>
+              }
+            </select>
+          </div>
         </div>
         <div class="form-actions">
           <button type="submit" class="btn-primary" [disabled]="guardando()">
@@ -53,7 +62,8 @@
               </span>
             }
           </div>
-          <div class="ledger-actions">
+          <div class="ledger-actions" style="align-items: center;">
+            <span class="badge">{{ etiquetaTipo(cliente.tipoCliente) }}</span>
             <button class="btn-ghost" (click)="editar(cliente)">Editar</button>
             <button class="btn-danger" (click)="desactivar(cliente)">Desactivar</button>
           </div>
