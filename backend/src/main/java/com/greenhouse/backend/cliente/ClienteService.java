@@ -40,6 +40,7 @@ public class ClienteService {
         cliente.setNombre(datos.getNombre());
         cliente.setTelefono(datos.getTelefono());
         cliente.setCedula(datos.getCedula());
+        cliente.setTipoCliente(datos.getTipoCliente());
         return clienteRepository.save(cliente);
     }
 
@@ -61,6 +62,7 @@ public class ClienteService {
                 .nombre(cliente.getNombre())
                 .telefono(cliente.getTelefono())
                 .cedula(cliente.getCedula())
+                .tipoCliente(cliente.getTipoCliente())
                 .activo(cliente.getActivo())
                 .saldoActual(transaccionRepository.calcularSaldo(cliente.getId()))
                 .build();

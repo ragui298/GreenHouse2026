@@ -45,6 +45,7 @@ public class DataSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) {
         migrarUsuarioPerfilLegacy();
+        migrarClientesSinTipo();
 
         // Agrega los recursos del catálogo que todavía no existan, sin tocar
         // los que ya están (permite ampliar RECURSOS_BASE en versiones
@@ -101,5 +102,13 @@ public class DataSeeder implements CommandLineRunner {
                         "AND NOT EXISTS (SELECT 1 FROM usuario_perfil up WHERE up.usuario_id = u.id)"
         );
         jdbcTemplate.execute("ALTER TABLE usuarios ALTER COLUMN perfil_id DROP NOT NULL");
+    }
+
+    // Los clientes registrados antes de agregar la clasificación por jornada
+    // (Primaria/Secundaria/Nocturno) quedan sin tipo_cliente. Como la base de
+    // clientes previa era toda nocturna, se los clasifica ahí por defecto;
+    // se pueden reclasificar individualmente desde Mantenimiento de clientes.
+    private void migrarClientesSinTipo() {
+        jdbcTemplate.update("UPDATE clientes SET tipo_cliente = 'NOCTURNO' WHERE tipo_cliente IS NULL");
     }
 }
