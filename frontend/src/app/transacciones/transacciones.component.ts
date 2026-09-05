@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { TransaccionService } from '../core/services/transaccion.service';
 import { AuthService } from '../core/services/auth.service';
 import { Transaccion, TipoTransaccion } from '../core/models/transaccion.model';
+import { TipoCliente, TIPOS_CLIENTE } from '../core/models/cliente.model';
 
 @Component({
   selector: 'app-transacciones',
@@ -23,15 +24,19 @@ export class TransaccionesComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly busqueda = signal('');
   readonly filtroTipo = signal<TipoTransaccion | 'TODOS'>('TODOS');
+  readonly filtroTipoCliente = signal<TipoCliente | 'TODOS'>('TODOS');
+  readonly tiposCliente = TIPOS_CLIENTE;
   readonly expandidaId = signal<number | null>(null);
 
   readonly transaccionesFiltradas = computed(() => {
     const termino = this.busqueda().trim().toLowerCase();
     const tipo = this.filtroTipo();
+    const tipoCliente = this.filtroTipoCliente();
     return this.transacciones().filter(t => {
       const coincideNombre = !termino || t.cliente.nombre.toLowerCase().includes(termino);
       const coincideTipo = tipo === 'TODOS' || t.tipo === tipo;
-      return coincideNombre && coincideTipo;
+      const coincideTipoCliente = tipoCliente === 'TODOS' || t.cliente.tipoCliente === tipoCliente;
+      return coincideNombre && coincideTipo && coincideTipoCliente;
     });
   });
 
@@ -52,6 +57,10 @@ export class TransaccionesComponent implements OnInit {
         this.cargando.set(false);
       }
     });
+  }
+
+  etiquetaTipoCliente(tipo?: TipoCliente): string {
+    return this.tiposCliente.find(t => t.valor === tipo)?.etiqueta ?? 'Sin jornada';
   }
 
   toggleDetalle(transaccion: Transaccion): void {

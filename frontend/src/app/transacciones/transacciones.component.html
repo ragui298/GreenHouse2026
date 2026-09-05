@@ -7,6 +7,12 @@
         <option value="CARGO">Cargos</option>
         <option value="ABONO">Abonos</option>
       </select>
+      <select class="form-select" [ngModel]="filtroTipoCliente()" (ngModelChange)="filtroTipoCliente.set($event)">
+        <option value="TODOS">Todas las jornadas</option>
+        @for (tipo of tiposCliente; track tipo.valor) {
+          <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+        }
+      </select>
       <input
         type="text"
         class="search-input"
@@ -30,7 +36,7 @@
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
             <div class="ledger-main">
               <span class="ledger-nombre">{{ t.cliente.nombre }}</span>
-              <span class="ledger-extra">{{ formatoFecha(t.fecha) }}</span>
+              <span class="ledger-extra">{{ etiquetaTipoCliente(t.cliente.tipoCliente) }} · {{ formatoFecha(t.fecha) }}</span>
               @if (t.descripcion) {
                 <span class="ledger-extra">{{ t.descripcion }}</span>
               }
