@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TransaccionService } from '../core/services/transaccion.service';
@@ -18,18 +18,32 @@ interface GrupoReporte {
   templateUrl: './reportes.component.html',
   styleUrl: './reportes.component.css'
 })
-export class ReportesComponent implements OnInit {
+export class ReportesComponent {
   private readonly transaccionService = inject(TransaccionService);
 
   readonly transacciones = signal<Transaccion[]>([]);
-  readonly cargando = signal(true);
+  readonly cargando = signal(false);
   readonly error = signal<string | null>(null);
+  readonly reporteGenerado = signal(false);
 
+  // Lo que el usuario va tocando en los filtros. No dispara ninguna consulta
+  // ni recalcula nada por sí solo: solo se "aplica" cuando se presiona
+  // "Generar reporte", para no hacer trabajo de más mientras todavía está
+  // terminando de elegir los filtros.
   readonly filtroTipoCliente = signal<TipoCliente | 'TODOS'>('TODOS');
   readonly busquedaNombre = signal('');
   readonly fechaDesde = signal('');
   readonly fechaHasta = signal('');
   readonly tiposCliente = TIPOS_CLIENTE;
+
+  // Copia de los filtros de arriba tomada en el momento de generar el
+  // reporte. El cálculo de "grupos" usa esta copia, no los signals de
+  // arriba, para que cambiar un filtro no actualice nada hasta el próximo
+  // clic en "Generar reporte".
+  private readonly filtroTipoClienteAplicado = signal<TipoCliente | 'TODOS'>('TODOS');
+  private readonly busquedaNombreAplicada = signal('');
+  private readonly fechaDesdeAplicada = signal('');
+  private readonly fechaHastaAplicada = signal('');
 
   // Clientes marcados como "ya le mandé el mensaje", para el checklist.
   // Se guarda en localStorage atado al rango de fechas del reporte, para
@@ -38,10 +52,10 @@ export class ReportesComponent implements OnInit {
   readonly enviados = signal<Set<string>>(this.cargarEnviadosGuardados());
 
   readonly grupos = computed<GrupoReporte[]>(() => {
-    const tipoCliente = this.filtroTipoCliente();
-    const nombre = this.busquedaNombre().trim().toLowerCase();
-    const desde = this.fechaDesde() ? new Date(`${this.fechaDesde()}T00:00:00`) : null;
-    const hasta = this.fechaHasta() ? new Date(`${this.fechaHasta()}T23:59:59`) : null;
+    const tipoCliente = this.filtroTipoClienteAplicado();
+    const nombre = this.busquedaNombreAplicada().trim().toLowerCase();
+    const desde = this.fechaDesdeAplicada() ? new Date(`${this.fechaDesdeAplicada()}T00:00:00`) : null;
+    const hasta = this.fechaHastaAplicada() ? new Date(`${this.fechaHastaAplicada()}T23:59:59`) : null;
 
     const filtradas = this.transacciones().filter(t => {
       const coincideTipoCliente = tipoCliente === 'TODOS' || t.cliente.tipoCliente === tipoCliente;
@@ -77,16 +91,19 @@ export class ReportesComponent implements OnInit {
     this.grupos().filter(g => this.estaEnviado(g.cliente.id)).length
   );
 
-  ngOnInit(): void {
-    this.cargar();
-  }
+  generarReporte(): void {
+    // Recién acá se "congelan" los filtros y se consulta el backend.
+    this.filtroTipoClienteAplicado.set(this.filtroTipoCliente());
+    this.busquedaNombreAplicada.set(this.busquedaNombre());
+    this.fechaDesdeAplicada.set(this.fechaDesde());
+    this.fechaHastaAplicada.set(this.fechaHasta());
 
-  cargar(): void {
     this.cargando.set(true);
     this.error.set(null);
     this.transaccionService.reportarTodas().subscribe({
       next: (transacciones) => {
         this.transacciones.set(transacciones);
+        this.reporteGenerado.set(true);
         this.cargando.set(false);
       },
       error: () => {
@@ -114,7 +131,7 @@ export class ReportesComponent implements OnInit {
   }
 
   private claveEnviado(clienteId: number): string {
-    return `${clienteId}::${this.fechaDesde()}::${this.fechaHasta()}`;
+    return `${clienteId}::${this.fechaDesdeAplicada()}::${this.fechaHastaAplicada()}`;
   }
 
   estaEnviado(clienteId: number): boolean {

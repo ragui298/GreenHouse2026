@@ -25,14 +25,19 @@
       <label for="fechaHasta">Hasta</label>
       <input id="fechaHasta" type="date" class="form-input" [ngModel]="fechaHasta()" (ngModelChange)="fechaHasta.set($event)" />
     </div>
+    <button class="btn-primary" (click)="generarReporte()" [disabled]="cargando()">
+      {{ cargando() ? 'Generando…' : 'Generar reporte' }}
+    </button>
   </div>
 
   @if (error()) {
     <p class="error-message">{{ error() }}</p>
   }
 
-  @if (cargando()) {
-    <p class="state-message">Cargando transacciones…</p>
+  @if (!reporteGenerado() && !cargando()) {
+    <p class="state-message">Elegí los filtros que necesités y presioná "Generar reporte".</p>
+  } @else if (cargando()) {
+    <p class="state-message">Generando reporte…</p>
   } @else if (grupos().length === 0) {
     <p class="state-message">No hay transacciones que coincidan con los filtros.</p>
   } @else {
