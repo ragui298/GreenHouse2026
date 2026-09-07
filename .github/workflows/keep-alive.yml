@@ -2,7 +2,11 @@ name: Mantener despierto el backend
 
 # El plan gratis de Render duerme la instancia después de ~15 minutos sin
 # tráfico, y el próximo request tarda 30-60s en "despertarla". Este workflow
-# le hace un ping liviano cada 14 minutos para que nunca llegue a dormirse.
+# le hace un ping liviano cada 14 minutos para que nunca llegue a dormirse,
+# pero SOLO en horario de 5am a 5pm hora de Costa Rica (UTC-6), que acá es
+# 11:00-22:00 UTC. Fuera de ese rango se deja dormir a propósito: de noche
+# nadie lo usa, y así el consumo de las 750 horas gratis de Render por mes
+# no se va al límite (24/7 usaría casi todo el cupo; así queda con margen).
 #
 # Importante: GitHub solo ejecuta workflows programados (schedule) usando el
 # archivo tal como está en la rama por defecto del repo (main). Si esto vive
@@ -10,7 +14,7 @@ name: Mantener despierto el backend
 
 on:
   schedule:
-    - cron: '*/14 * * * *'
+    - cron: '*/14 11-22 * * *'
   workflow_dispatch:
 
 jobs:
