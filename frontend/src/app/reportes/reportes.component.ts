@@ -31,6 +31,12 @@ export class ReportesComponent implements OnInit {
   readonly fechaHasta = signal('');
   readonly tiposCliente = TIPOS_CLIENTE;
 
+  // Clientes marcados como "ya le mandé el mensaje", para el checklist.
+  // Se guarda en localStorage atado al rango de fechas del reporte, para
+  // que las marcas de un período no aparezcan como enviadas en el próximo.
+  private static readonly CLAVE_STORAGE = 'greenhouse_reportes_enviados';
+  readonly enviados = signal<Set<string>>(this.cargarEnviadosGuardados());
+
   readonly grupos = computed<GrupoReporte[]>(() => {
     const tipoCliente = this.filtroTipoCliente();
     const nombre = this.busquedaNombre().trim().toLowerCase();
@@ -67,6 +73,10 @@ export class ReportesComponent implements OnInit {
     return Array.from(porCliente.values()).sort((a, b) => a.cliente.nombre.localeCompare(b.cliente.nombre));
   });
 
+  readonly cantidadEnviados = computed(() =>
+    this.grupos().filter(g => this.estaEnviado(g.cliente.id)).length
+  );
+
   ngOnInit(): void {
     this.cargar();
   }
@@ -84,6 +94,43 @@ export class ReportesComponent implements OnInit {
         this.cargando.set(false);
       }
     });
+  }
+
+  private cargarEnviadosGuardados(): Set<string> {
+    try {
+      const guardado = localStorage.getItem(ReportesComponent.CLAVE_STORAGE);
+      return guardado ? new Set(JSON.parse(guardado)) : new Set();
+    } catch {
+      return new Set();
+    }
+  }
+
+  private guardarEnviados(): void {
+    try {
+      localStorage.setItem(ReportesComponent.CLAVE_STORAGE, JSON.stringify([...this.enviados()]));
+    } catch {
+      // Si localStorage no está disponible, el checklist simplemente no persiste.
+    }
+  }
+
+  private claveEnviado(clienteId: number): string {
+    return `${clienteId}::${this.fechaDesde()}::${this.fechaHasta()}`;
+  }
+
+  estaEnviado(clienteId: number): boolean {
+    return this.enviados().has(this.claveEnviado(clienteId));
+  }
+
+  toggleEnviado(clienteId: number): void {
+    const clave = this.claveEnviado(clienteId);
+    const actualizado = new Set(this.enviados());
+    if (actualizado.has(clave)) {
+      actualizado.delete(clave);
+    } else {
+      actualizado.add(clave);
+    }
+    this.enviados.set(actualizado);
+    this.guardarEnviados();
   }
 
   etiquetaTipo(tipo?: TipoCliente): string {
@@ -133,5 +180,9 @@ export class ReportesComponent implements OnInit {
     const numero = soloDigitos.length === 8 ? `506${soloDigitos}` : soloDigitos;
     const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
     window.open(url, '_blank');
+
+    if (!this.estaEnviado(grupo.cliente.id)) {
+      this.toggleEnviado(grupo.cliente.id);
+    }
   }
 }

@@ -36,9 +36,19 @@
   } @else if (grupos().length === 0) {
     <p class="state-message">No hay transacciones que coincidan con los filtros.</p>
   } @else {
+    <p class="contador-enviados">{{ cantidadEnviados() }} de {{ grupos().length }} enviados</p>
+
     @for (grupo of grupos(); track grupo.cliente.id) {
-      <div class="form-card reporte-card">
+      <div class="form-card reporte-card" [class.enviado]="estaEnviado(grupo.cliente.id)">
         <div class="reporte-header">
+          <label class="check-enviado">
+            <input
+              type="checkbox"
+              [checked]="estaEnviado(grupo.cliente.id)"
+              (change)="toggleEnviado(grupo.cliente.id)"
+            />
+            <span>Enviado</span>
+          </label>
           <div class="reporte-cliente">
             <span class="ledger-nombre">{{ grupo.cliente.nombre }}</span>
             <span class="badge">{{ etiquetaTipo(grupo.cliente.tipoCliente) }}</span>

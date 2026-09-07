@@ -12,8 +12,19 @@
   min-width: 140px;
 }
 
+.contador-enviados {
+  font-size: 13px;
+  color: var(--color-ink-soft);
+  margin: 0 0 14px;
+}
+
 .reporte-card {
   margin-bottom: 20px;
+  transition: opacity 0.15s ease;
+}
+
+.reporte-card.enviado {
+  opacity: 0.55;
 }
 
 .reporte-header {
@@ -23,6 +34,24 @@
   gap: 16px;
   flex-wrap: wrap;
   margin-bottom: 14px;
+}
+
+.check-enviado {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--color-ink-soft);
+  cursor: pointer;
+  user-select: none;
+  order: -1;
+}
+
+.check-enviado input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
 }
 
 .reporte-cliente {
