@@ -3,7 +3,7 @@ export type TipoCliente = 'PRIMARIA' | 'SECUNDARIA' | 'NOCTURNO';
 export const TIPOS_CLIENTE: { valor: TipoCliente; etiqueta: string }[] = [
   { valor: 'PRIMARIA', etiqueta: 'Primaria' },
   { valor: 'SECUNDARIA', etiqueta: 'Secundaria' },
-  { valor: 'NOCTURNO', etiqueta: 'Nocturno' }
+  { valor: 'NOCTURNO', etiqueta: 'Profesores' }
 ];
 
 export interface Cliente {
