@@ -1,13 +1,14 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { ClienteService } from '../core/services/cliente.service';
 import { Cliente, TipoCliente, TIPOS_CLIENTE } from '../core/models/cliente.model';
 
 @Component({
   selector: 'app-mantenimiento-clientes',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './mantenimiento-clientes.component.html',
   styleUrl: './mantenimiento-clientes.component.css'
 })
@@ -22,6 +23,21 @@ export class MantenimientoClientesComponent implements OnInit {
   readonly editandoId = signal<number | null>(null);
   readonly mostrarFormulario = signal(false);
   readonly tiposCliente = TIPOS_CLIENTE;
+  readonly busqueda = signal('');
+  readonly filtroTipo = signal<TipoCliente | 'TODOS'>('TODOS');
+
+  readonly clientesFiltrados = computed(() => {
+    const termino = this.busqueda().trim().toLowerCase();
+    const tipo = this.filtroTipo();
+    return this.clientes().filter(c => {
+      const coincideNombre = !termino
+        || c.nombre.toLowerCase().includes(termino)
+        || (c.telefono ?? '').toLowerCase().includes(termino)
+        || (c.cedula ?? '').toLowerCase().includes(termino);
+      const coincideTipo = tipo === 'TODOS' || c.tipoCliente === tipo;
+      return coincideNombre && coincideTipo;
+    });
+  });
 
   readonly form = this.fb.group({
     nombre: ['', [Validators.required]],
