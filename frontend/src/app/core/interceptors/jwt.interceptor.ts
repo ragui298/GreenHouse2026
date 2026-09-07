@@ -13,7 +13,14 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const token = authService.getToken();
 
-  const authReq = token
+  // Los endpoints de /auth (login, forgot-password, etc.) son públicos y no
+  // deben llevar un token viejo/vencido: si quedó uno en localStorage de una
+  // sesión anterior, el backend lo rechaza (403) antes de validar las
+  // credenciales, y el usuario ve "usuario o contraseña incorrectos" sin
+  // que ese sea el problema real.
+  const esEndpointPublico = req.url.includes('/auth/');
+
+  const authReq = token && !esEndpointPublico
     ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
     : req;
 
