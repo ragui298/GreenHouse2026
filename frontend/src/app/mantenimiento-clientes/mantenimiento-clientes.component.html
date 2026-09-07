@@ -72,24 +72,32 @@
       }
     </p>
   } @else {
-    <div class="ledger">
-      @for (cliente of clientesFiltrados(); track cliente.id) {
-        <div class="ledger-row">
-          <div class="ledger-main">
-            <span class="ledger-nombre">{{ cliente.nombre }}</span>
-            @if (cliente.telefono || cliente.cedula) {
-              <span class="ledger-extra">
-                {{ cliente.telefono }}{{ cliente.telefono && cliente.cedula ? ' · ' : '' }}{{ cliente.cedula }}
-              </span>
-            }
-          </div>
-          <div class="ledger-actions" style="align-items: center;">
-            <span class="badge">{{ etiquetaTipo(cliente.tipoCliente) }}</span>
-            <button class="btn-ghost" (click)="editar(cliente)">Editar</button>
-            <button class="btn-danger" (click)="desactivar(cliente)">Desactivar</button>
-          </div>
-        </div>
-      }
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Teléfono</th>
+            <th>Cédula</th>
+            <th>Jornada</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (cliente of clientesFiltrados(); track cliente.id) {
+            <tr>
+              <td>{{ cliente.nombre }}</td>
+              <td>{{ cliente.telefono || '—' }}</td>
+              <td>{{ cliente.cedula || '—' }}</td>
+              <td><span class="badge">{{ etiquetaTipo(cliente.tipoCliente) }}</span></td>
+              <td class="table-actions">
+                <button class="btn-ghost" (click)="editar(cliente)">Editar</button>
+                <button class="btn-danger" (click)="desactivar(cliente)">Desactivar</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
   }
 </div>
