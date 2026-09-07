@@ -18,6 +18,10 @@ export class TransaccionService {
     return this.http.get<Transaccion[]>(this.apiUrl);
   }
 
+  reportarTodas(): Observable<Transaccion[]> {
+    return this.http.get<Transaccion[]>(`${this.apiUrl}/reporte`);
+  }
+
   historialCliente(clienteId: number): Observable<Transaccion[]> {
     return this.http.get<Transaccion[]>(`${this.apiUrl}/cliente/${clienteId}`);
   }

@@ -1,0 +1,82 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Reportes</h1>
+  </div>
+
+  <div class="filtros">
+    <select class="form-select" [ngModel]="filtroTipoCliente()" (ngModelChange)="filtroTipoCliente.set($event)">
+      <option value="TODOS">Todas las jornadas</option>
+      @for (tipo of tiposCliente; track tipo.valor) {
+        <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+      }
+    </select>
+    <input
+      type="text"
+      class="search-input"
+      placeholder="Buscar por nombre de cliente…"
+      [ngModel]="busquedaNombre()"
+      (ngModelChange)="busquedaNombre.set($event)"
+    />
+    <div class="form-field rango-fechas">
+      <label for="fechaDesde">Desde</label>
+      <input id="fechaDesde" type="date" class="form-input" [ngModel]="fechaDesde()" (ngModelChange)="fechaDesde.set($event)" />
+    </div>
+    <div class="form-field rango-fechas">
+      <label for="fechaHasta">Hasta</label>
+      <input id="fechaHasta" type="date" class="form-input" [ngModel]="fechaHasta()" (ngModelChange)="fechaHasta.set($event)" />
+    </div>
+  </div>
+
+  @if (error()) {
+    <p class="error-message">{{ error() }}</p>
+  }
+
+  @if (cargando()) {
+    <p class="state-message">Cargando transacciones…</p>
+  } @else if (grupos().length === 0) {
+    <p class="state-message">No hay transacciones que coincidan con los filtros.</p>
+  } @else {
+    @for (grupo of grupos(); track grupo.cliente.id) {
+      <div class="form-card reporte-card">
+        <div class="reporte-header">
+          <div class="reporte-cliente">
+            <span class="ledger-nombre">{{ grupo.cliente.nombre }}</span>
+            <span class="badge">{{ etiquetaTipo(grupo.cliente.tipoCliente) }}</span>
+            @if (grupo.cliente.telefono) {
+              <span class="ledger-telefono">{{ grupo.cliente.telefono }}</span>
+            }
+          </div>
+          <div class="reporte-acciones">
+            <span class="reporte-total mono" [class.debt]="grupo.total > 0" [class.paid]="grupo.total < 0">
+              Total {{ formatoMonto(grupo.total) }}
+            </span>
+            <button class="btn-primary" (click)="enviarPorWhatsapp(grupo)">Enviar por WhatsApp</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Detalle</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (t of grupo.transacciones; track t.id) {
+                <tr>
+                  <td>{{ formatoFecha(t.fecha) }}</td>
+                  <td>{{ t.descripcion?.trim() || (t.tipo === 'CARGO' ? 'Cargo' : 'Abono') }}</td>
+                  <td class="mono" [class.debt]="t.tipo === 'CARGO'" [class.paid]="t.tipo === 'ABONO'">
+                    {{ t.tipo === 'ABONO' ? '-' : '' }}{{ formatoMonto(t.monto) }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  }
+</div>

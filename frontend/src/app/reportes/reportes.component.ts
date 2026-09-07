@@ -1,0 +1,137 @@
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { TransaccionService } from '../core/services/transaccion.service';
+import { Transaccion } from '../core/models/transaccion.model';
+import { Cliente, TipoCliente, TIPOS_CLIENTE } from '../core/models/cliente.model';
+
+interface GrupoReporte {
+  cliente: Cliente;
+  transacciones: Transaccion[];
+  total: number;
+}
+
+@Component({
+  selector: 'app-reportes',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './reportes.component.html',
+  styleUrl: './reportes.component.css'
+})
+export class ReportesComponent implements OnInit {
+  private readonly transaccionService = inject(TransaccionService);
+
+  readonly transacciones = signal<Transaccion[]>([]);
+  readonly cargando = signal(true);
+  readonly error = signal<string | null>(null);
+
+  readonly filtroTipoCliente = signal<TipoCliente | 'TODOS'>('TODOS');
+  readonly busquedaNombre = signal('');
+  readonly fechaDesde = signal('');
+  readonly fechaHasta = signal('');
+  readonly tiposCliente = TIPOS_CLIENTE;
+
+  readonly grupos = computed<GrupoReporte[]>(() => {
+    const tipoCliente = this.filtroTipoCliente();
+    const nombre = this.busquedaNombre().trim().toLowerCase();
+    const desde = this.fechaDesde() ? new Date(`${this.fechaDesde()}T00:00:00`) : null;
+    const hasta = this.fechaHasta() ? new Date(`${this.fechaHasta()}T23:59:59`) : null;
+
+    const filtradas = this.transacciones().filter(t => {
+      const coincideTipoCliente = tipoCliente === 'TODOS' || t.cliente.tipoCliente === tipoCliente;
+      const coincideNombre = !nombre || t.cliente.nombre.toLowerCase().includes(nombre);
+      const fecha = new Date(t.fecha);
+      const coincideDesde = !desde || fecha >= desde;
+      const coincideHasta = !hasta || fecha <= hasta;
+      return coincideTipoCliente && coincideNombre && coincideDesde && coincideHasta;
+    });
+
+    const porCliente = new Map<number, GrupoReporte>();
+    for (const t of filtradas) {
+      const existente = porCliente.get(t.cliente.id);
+      if (existente) {
+        existente.transacciones.push(t);
+      } else {
+        porCliente.set(t.cliente.id, { cliente: t.cliente, transacciones: [t], total: 0 });
+      }
+    }
+
+    for (const grupo of porCliente.values()) {
+      grupo.transacciones.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+      grupo.total = grupo.transacciones.reduce(
+        (acc, t) => acc + (t.tipo === 'CARGO' ? t.monto : -t.monto),
+        0
+      );
+    }
+
+    return Array.from(porCliente.values()).sort((a, b) => a.cliente.nombre.localeCompare(b.cliente.nombre));
+  });
+
+  ngOnInit(): void {
+    this.cargar();
+  }
+
+  cargar(): void {
+    this.cargando.set(true);
+    this.error.set(null);
+    this.transaccionService.reportarTodas().subscribe({
+      next: (transacciones) => {
+        this.transacciones.set(transacciones);
+        this.cargando.set(false);
+      },
+      error: () => {
+        this.error.set('No se pudieron cargar las transacciones.');
+        this.cargando.set(false);
+      }
+    });
+  }
+
+  etiquetaTipo(tipo?: TipoCliente): string {
+    return this.tiposCliente.find(t => t.valor === tipo)?.etiqueta ?? 'Sin jornada';
+  }
+
+  formatoFecha(fecha: string): string {
+    return new Intl.DateTimeFormat('es-CR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(new Date(fecha));
+  }
+
+  formatoMonto(monto: number): string {
+    // No usamos Intl.NumberFormat acá porque el separador de miles de
+    // 'es-CR' varía según el motor (a veces da espacio en vez de punto).
+    // Se arma a mano para que siempre salga "1.234,56", como se acostumbra
+    // en los recibos y en el mensaje de WhatsApp.
+    const [entero, decimales] = Math.abs(monto).toFixed(2).split('.');
+    const enteroConPuntos = entero.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return `${enteroConPuntos},${decimales}`;
+  }
+
+  enviarPorWhatsapp(grupo: GrupoReporte): void {
+    const soloDigitos = grupo.cliente.telefono?.replace(/\D/g, '') ?? '';
+    if (!soloDigitos) {
+      this.error.set(`${grupo.cliente.nombre} no tiene un número de teléfono registrado.`);
+      return;
+    }
+
+    const lineas = grupo.transacciones.map(t => {
+      const detalle = t.descripcion?.trim() || (t.tipo === 'CARGO' ? 'Cargo' : 'Abono');
+      const signo = t.tipo === 'ABONO' ? '-' : '';
+      return `${this.formatoFecha(t.fecha)} ${detalle} ${signo}${this.formatoMonto(t.monto)}`;
+    });
+
+    const mensaje = [
+      ...lineas,
+      '----------------------------------------',
+      `Total  ${this.formatoMonto(grupo.total)}`,
+      '',
+      'Muchas Gracias!!'
+    ].join('\n');
+
+    // Números de Costa Rica se guardan a 8 dígitos sin código de país (506).
+    const numero = soloDigitos.length === 8 ? `506${soloDigitos}` : soloDigitos;
+    const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank');
+  }
+}
