@@ -1,0 +1,22 @@
+name: Mantener despierto el backend
+
+# El plan gratis de Render duerme la instancia después de ~15 minutos sin
+# tráfico, y el próximo request tarda 30-60s en "despertarla". Este workflow
+# le hace un ping liviano cada 14 minutos para que nunca llegue a dormirse.
+#
+# Importante: GitHub solo ejecuta workflows programados (schedule) usando el
+# archivo tal como está en la rama por defecto del repo (main). Si esto vive
+# solo en una rama de feature, no corre.
+
+on:
+  schedule:
+    - cron: '*/14 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping al backend
+        run: |
+          curl -sf -o /dev/null -w "Respuesta: %{http_code}\n" https://greenhouse2026-b.onrender.com/api/salud
