@@ -75,6 +75,39 @@
   border-color: var(--color-primary-light);
 }
 
+.password-wrap {
+  position: relative;
+  display: flex;
+}
+
+.password-wrap input {
+  width: 100%;
+  padding-right: 40px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--color-ink-soft);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.toggle-password:hover {
+  color: var(--color-ink);
+  background: var(--color-bg);
+}
+
 .error-message {
   margin: 0;
   padding: 10px 12px;
