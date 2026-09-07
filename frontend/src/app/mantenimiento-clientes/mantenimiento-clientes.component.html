@@ -1,9 +1,24 @@
 <div class="page">
   <div class="page-header">
     <h1>Mantenimiento de clientes</h1>
-    @if (!mostrarFormulario()) {
-      <button class="btn-primary" (click)="nuevoCliente()">+ Nuevo cliente</button>
-    }
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+      <select class="form-select" [ngModel]="filtroTipo()" (ngModelChange)="filtroTipo.set($event)">
+        <option value="TODOS">Todas las jornadas</option>
+        @for (tipo of tiposCliente; track tipo.valor) {
+          <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+        }
+      </select>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Buscar por nombre, teléfono o cédula…"
+        [ngModel]="busqueda()"
+        (ngModelChange)="busqueda.set($event)"
+      />
+      @if (!mostrarFormulario()) {
+        <button class="btn-primary" (click)="nuevoCliente()">+ Nuevo cliente</button>
+      }
+    </div>
   </div>
 
   @if (error()) {
@@ -48,27 +63,41 @@
 
   @if (cargando()) {
     <p class="state-message">Cargando clientes…</p>
-  } @else if (clientes().length === 0) {
-    <p class="state-message">Todavía no hay clientes registrados.</p>
-  } @else {
-    <div class="ledger">
-      @for (cliente of clientes(); track cliente.id) {
-        <div class="ledger-row">
-          <div class="ledger-main">
-            <span class="ledger-nombre">{{ cliente.nombre }}</span>
-            @if (cliente.telefono || cliente.cedula) {
-              <span class="ledger-extra">
-                {{ cliente.telefono }}{{ cliente.telefono && cliente.cedula ? ' · ' : '' }}{{ cliente.cedula }}
-              </span>
-            }
-          </div>
-          <div class="ledger-actions" style="align-items: center;">
-            <span class="badge">{{ etiquetaTipo(cliente.tipoCliente) }}</span>
-            <button class="btn-ghost" (click)="editar(cliente)">Editar</button>
-            <button class="btn-danger" (click)="desactivar(cliente)">Desactivar</button>
-          </div>
-        </div>
+  } @else if (clientesFiltrados().length === 0) {
+    <p class="state-message">
+      @if (busqueda() || filtroTipo() !== 'TODOS') {
+        No hay clientes que coincidan con la búsqueda.
+      } @else {
+        Todavía no hay clientes registrados.
       }
+    </p>
+  } @else {
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Teléfono</th>
+            <th>Cédula</th>
+            <th>Jornada</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (cliente of clientesFiltrados(); track cliente.id) {
+            <tr>
+              <td>{{ cliente.nombre }}</td>
+              <td>{{ cliente.telefono || '—' }}</td>
+              <td>{{ cliente.cedula || '—' }}</td>
+              <td><span class="badge">{{ etiquetaTipo(cliente.tipoCliente) }}</span></td>
+              <td class="table-actions">
+                <button class="btn-ghost" (click)="editar(cliente)">Editar</button>
+                <button class="btn-danger" (click)="desactivar(cliente)">Desactivar</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
   }
 </div>
