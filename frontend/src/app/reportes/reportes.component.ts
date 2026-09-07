@@ -172,6 +172,21 @@ export class ReportesComponent {
     return `${enteroConPuntos},${decimales}`;
   }
 
+  private formatoFechaCorta(fecha: string): string {
+    // A mano en vez de Intl.DateTimeFormat: sin el año, algunos motores
+    // dejan de rellenar con cero (da "7/9" en vez de "07/09").
+    const d = new Date(fecha);
+    const dia = String(d.getDate()).padStart(2, '0');
+    const mes = String(d.getMonth() + 1).padStart(2, '0');
+    return `${dia}/${mes}`;
+  }
+
+  private formatoMontoMensaje(monto: number): string {
+    // Para el mensaje de WhatsApp los montos van sin decimales (acá nunca
+    // se manejan céntimos): "5.000" en vez de "5.000,00".
+    return Math.abs(monto).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+
   enviarPorWhatsapp(grupo: GrupoReporte): void {
     const soloDigitos = grupo.cliente.telefono?.replace(/\D/g, '') ?? '';
     if (!soloDigitos) {
@@ -179,18 +194,28 @@ export class ReportesComponent {
       return;
     }
 
-    const lineas = grupo.transacciones.map(t => {
+    // Se agrupa por fecha: la fecha aparece una sola vez, seguida de los
+    // consumos de ese día, sin repetirla en cada línea.
+    const lineas: string[] = [];
+    let fechaAnterior = '';
+    for (const t of grupo.transacciones) {
+      const fechaCorta = this.formatoFechaCorta(t.fecha);
+      if (fechaCorta !== fechaAnterior) {
+        lineas.push(fechaCorta);
+        fechaAnterior = fechaCorta;
+      }
       const detalle = t.descripcion?.trim() || (t.tipo === 'CARGO' ? 'Cargo' : 'Abono');
       const signo = t.tipo === 'ABONO' ? '-' : '';
-      return `${this.formatoFecha(t.fecha)} ${detalle} ${signo}${this.formatoMonto(t.monto)}`;
-    });
+      lineas.push(`${detalle} ${signo}${this.formatoMontoMensaje(t.monto)}`);
+    }
 
     const mensaje = [
+      '- Consumo Soda Colegio',
       ...lineas,
-      '----------------------------------------',
-      `Total  ${this.formatoMonto(grupo.total)}`,
+      '------------------------------',
+      `Total ${this.formatoMontoMensaje(grupo.total)}`,
       '',
-      'Muchas Gracias!!'
+      'Bendiciones Muchas Gracias!!'
     ].join('\n');
 
     // Números de Costa Rica se guardan a 8 dígitos sin código de país (506).
