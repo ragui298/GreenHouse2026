@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -51,6 +52,14 @@ public class GlobalExceptionHandler {
         // en vez de 404 -- confundiendo un simple "ruta no existe" con un
         // error real del servidor.
         return build(HttpStatus.NOT_FOUND, "El recurso solicitado no existe.");
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<Map<String, Object>> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        // Mismo caso que NoResourceFoundException de arriba: pedir la ruta
+        // correcta con el método equivocado (ej. GET a algo que solo acepta
+        // DELETE) caía en el 500 genérico en vez de un 405 claro.
+        return build(HttpStatus.METHOD_NOT_ALLOWED, "Método no permitido para esta ruta.");
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
