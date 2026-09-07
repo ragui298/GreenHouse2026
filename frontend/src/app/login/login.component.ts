@@ -18,11 +18,16 @@ export class LoginComponent {
 
   readonly cargando = signal(false);
   readonly error = signal<string | null>(null);
+  readonly mostrarPassword = signal(false);
 
   readonly form = this.fb.group({
     username: ['', [Validators.required]],
     password: ['', [Validators.required]]
   });
+
+  toggleMostrarPassword(): void {
+    this.mostrarPassword.update(v => !v);
+  }
 
   onSubmit(): void {
     if (this.form.invalid) {
