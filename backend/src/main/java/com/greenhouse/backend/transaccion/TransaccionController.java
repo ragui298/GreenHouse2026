@@ -29,6 +29,12 @@ public class TransaccionController {
         return transaccionService.listarTodas();
     }
 
+    @GetMapping("/reporte")
+    @PreAuthorize("@permisoService.tieneAcceso('REPORTES')")
+    public List<Transaccion> reporte() {
+        return transaccionService.listarTodas();
+    }
+
     @GetMapping("/cliente/{clienteId}")
     public List<Transaccion> historial(@PathVariable("clienteId") Long clienteId) {
         return transaccionService.historialCliente(clienteId);
