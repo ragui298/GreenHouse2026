@@ -6,7 +6,10 @@ import com.greenhouse.backend.transaccion.TransaccionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -16,8 +19,9 @@ public class ClienteService {
     private final TransaccionRepository transaccionRepository;
 
     public List<ClienteDTO> listarConSaldo() {
+        Map<Long, BigDecimal> saldos = cargarSaldos();
         return clienteRepository.findByActivoTrue().stream()
-                .map(this::toDTO)
+                .map(c -> toDTO(c, saldos.getOrDefault(c.getId(), BigDecimal.ZERO)))
                 .toList();
     }
 
@@ -51,12 +55,25 @@ public class ClienteService {
     }
 
     public List<ClienteDTO> buscar(String nombre) {
+        Map<Long, BigDecimal> saldos = cargarSaldos();
         return clienteRepository.findByNombreContainingIgnoreCaseAndActivoTrue(nombre).stream()
-                .map(this::toDTO)
+                .map(c -> toDTO(c, saldos.getOrDefault(c.getId(), BigDecimal.ZERO)))
                 .toList();
     }
 
+    private Map<Long, BigDecimal> cargarSaldos() {
+        return transaccionRepository.calcularSaldosPorCliente().stream()
+                .collect(Collectors.toMap(
+                        fila -> (Long) fila[0],
+                        fila -> (BigDecimal) fila[1]
+                ));
+    }
+
     private ClienteDTO toDTO(Cliente cliente) {
+        return toDTO(cliente, transaccionRepository.calcularSaldo(cliente.getId()));
+    }
+
+    private ClienteDTO toDTO(Cliente cliente, BigDecimal saldo) {
         return ClienteDTO.builder()
                 .id(cliente.getId())
                 .nombre(cliente.getNombre())
@@ -64,7 +81,7 @@ public class ClienteService {
                 .cedula(cliente.getCedula())
                 .tipoCliente(cliente.getTipoCliente())
                 .activo(cliente.getActivo())
-                .saldoActual(transaccionRepository.calcularSaldo(cliente.getId()))
+                .saldoActual(saldo)
                 .build();
     }
 }
