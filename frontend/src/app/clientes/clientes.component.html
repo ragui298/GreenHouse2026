@@ -18,6 +18,10 @@
     </div>
   </div>
 
+  @if (exitoTransaccion()) {
+    <p class="success-message">{{ exitoTransaccion() }}</p>
+  }
+
   @if (cargando()) {
     <p class="state-message">Cargando clientes…</p>
   } @else if (error()) {
