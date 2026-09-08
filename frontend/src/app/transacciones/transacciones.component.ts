@@ -14,6 +14,8 @@ import { TipoCliente, TIPOS_CLIENTE } from '../core/models/cliente.model';
   styleUrl: './transacciones.component.css'
 })
 export class TransaccionesComponent implements OnInit {
+  private static readonly LIMITE_DEFAULT = 150;
+
   private readonly transaccionService = inject(TransaccionService);
   private readonly authService = inject(AuthService);
 
@@ -28,17 +30,35 @@ export class TransaccionesComponent implements OnInit {
   readonly tiposCliente = TIPOS_CLIENTE;
   readonly expandidaId = signal<number | null>(null);
 
+  readonly hayFiltrosActivos = computed(() =>
+    this.busqueda().trim() !== '' || this.filtroTipo() !== 'TODOS' || this.filtroTipoCliente() !== 'TODOS'
+  );
+
   readonly transaccionesFiltradas = computed(() => {
     const termino = this.busqueda().trim().toLowerCase();
     const tipo = this.filtroTipo();
     const tipoCliente = this.filtroTipoCliente();
-    return this.transacciones().filter(t => {
+    const filtradas = this.transacciones().filter(t => {
       const coincideNombre = !termino || t.cliente.nombre.toLowerCase().includes(termino);
       const coincideTipo = tipo === 'TODOS' || t.tipo === tipo;
       const coincideTipoCliente = tipoCliente === 'TODOS' || t.cliente.tipoCliente === tipoCliente;
       return coincideNombre && coincideTipo && coincideTipoCliente;
     });
+
+    if (!this.hayFiltrosActivos()) {
+      // La lista llega del backend ordenada por fecha descendente, así que
+      // los primeros N ya son justo los últimos N registros. Sin esto, con
+      // el historial completo creciendo mes a mes la tabla se vuelve
+      // interminable; si se necesita algo más viejo, para eso están los
+      // filtros (ahí sí se busca sobre todo el historial ya cargado).
+      return filtradas.slice(0, TransaccionesComponent.LIMITE_DEFAULT);
+    }
+    return filtradas;
   });
+
+  readonly mostrandoLimitado = computed(() =>
+    !this.hayFiltrosActivos() && this.transacciones().length > TransaccionesComponent.LIMITE_DEFAULT
+  );
 
   ngOnInit(): void {
     this.cargar();
@@ -61,6 +81,16 @@ export class TransaccionesComponent implements OnInit {
 
   etiquetaTipoCliente(tipo?: TipoCliente): string {
     return this.tiposCliente.find(t => t.valor === tipo)?.etiqueta ?? 'Sin jornada';
+  }
+
+  detalleTransaccion(t: Transaccion): string {
+    if (t.descripcion?.trim()) {
+      return t.descripcion.trim();
+    }
+    if (t.detalles.length > 0) {
+      return `${t.detalles.length} producto${t.detalles.length > 1 ? 's' : ''}`;
+    }
+    return '—';
   }
 
   toggleDetalle(transaccion: Transaccion): void {

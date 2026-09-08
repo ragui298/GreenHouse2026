@@ -37,4 +37,19 @@ public interface TransaccionRepository extends JpaRepository<Transaccion, Long> 
     List<Object[]> calcularSaldosPorCliente();
 
     List<Transaccion> findAllByOrderByFechaDesc();
+
+    // Trae cliente + detalles + producto en la misma consulta (JOIN FETCH),
+    // en vez de dejar que Hibernate los cargue perezosamente uno por uno al
+    // serializar el JSON. Sin esto, listar transacciones dispara una
+    // consulta extra por cada transaccion (por su cliente) más otra por
+    // cada detalle (por su producto) -- con solo 44 transacciones ya
+    // tardaba ~3 segundos por esto.
+    @Query("""
+        SELECT DISTINCT t FROM Transaccion t
+        LEFT JOIN FETCH t.cliente
+        LEFT JOIN FETCH t.detalles d
+        LEFT JOIN FETCH d.producto
+        ORDER BY t.fecha DESC
+    """)
+    List<Transaccion> findAllConDetallesOrderByFechaDesc();
 }

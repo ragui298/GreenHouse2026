@@ -69,7 +69,7 @@ public class TransaccionService {
     }
 
     public List<Transaccion> listarTodas() {
-        return transaccionRepository.findAllByOrderByFechaDesc();
+        return transaccionRepository.findAllConDetallesOrderByFechaDesc();
     }
 
     public BigDecimal saldoCliente(Long clienteId) {
