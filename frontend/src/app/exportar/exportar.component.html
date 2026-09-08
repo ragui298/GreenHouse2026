@@ -1,0 +1,44 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Exportar transacciones</h1>
+  </div>
+
+  <div class="form-card">
+    <p class="state-message" style="padding: 0 0 16px; text-align: left;">
+      Elegí el rango de fechas y descargá el historial de transacciones en un archivo de Excel.
+    </p>
+
+    <div class="form-row">
+      <div class="form-field">
+        <label for="fechaDesde">Desde</label>
+        <input
+          id="fechaDesde"
+          type="date"
+          class="form-input"
+          [ngModel]="fechaDesde()"
+          (ngModelChange)="fechaDesde.set($event)"
+        />
+      </div>
+      <div class="form-field">
+        <label for="fechaHasta">Hasta</label>
+        <input
+          id="fechaHasta"
+          type="date"
+          class="form-input"
+          [ngModel]="fechaHasta()"
+          (ngModelChange)="fechaHasta.set($event)"
+        />
+      </div>
+    </div>
+
+    @if (error()) {
+      <p class="error-message">{{ error() }}</p>
+    }
+
+    <div class="form-actions">
+      <button class="btn-primary" [disabled]="exportando()" (click)="exportar()">
+        {{ exportando() ? 'Generando…' : 'Exportar a Excel' }}
+      </button>
+    </div>
+  </div>
+</div>

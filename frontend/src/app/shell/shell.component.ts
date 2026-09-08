@@ -30,6 +30,7 @@ export class ShellComponent {
     { label: 'Clientes', path: '/clientes', recurso: 'CLIENTES', icono: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0' },
     { label: 'Transacciones', path: '/transacciones', recurso: 'TRANSACCIONES', icono: 'M4 6h16M4 12h10M4 18h16M17 9l3 3-3 3' },
     { label: 'Reportes', path: '/reportes', recurso: 'REPORTES', icono: 'M4 19h16M7 19V9m5 10V5m5 14v-7' },
+    { label: 'Exportar', path: '/exportar', recurso: 'EXPORTAR', icono: 'M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2' },
     { label: 'Mantenimiento usuarios', path: '/mantenimiento/usuarios', recurso: 'USUARIOS', icono: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 4h6m-3-3v6' },
     { label: 'Mantenimiento perfiles', path: '/mantenimiento/perfiles', recurso: 'MANTENIMIENTO_PERFILES', icono: 'M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z' },
     { label: 'Mantenimiento clientes', path: '/mantenimiento/clientes', recurso: 'MANTENIMIENTO_CLIENTES', icono: 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z' },

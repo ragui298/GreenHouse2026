@@ -169,6 +169,16 @@
   font-size: 13.5px;
 }
 
+.success-message {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  background: rgba(76, 122, 87, 0.08);
+  border: 1px solid rgba(76, 122, 87, 0.25);
+  border-radius: var(--radius-sm);
+  color: var(--color-paid);
+  font-size: 13.5px;
+}
+
 .summary-row {
   display: flex;
   gap: 16px;
