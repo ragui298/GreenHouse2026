@@ -29,4 +29,11 @@ export class TransaccionService {
   eliminar(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
+
+  exportar(desde: string, hasta: string): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/exportar`, {
+      params: { desde, hasta },
+      responseType: 'blob'
+    });
+  }
 }

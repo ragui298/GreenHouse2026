@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface TransaccionRepository extends JpaRepository<Transaccion, Long> {
@@ -52,4 +53,18 @@ public interface TransaccionRepository extends JpaRepository<Transaccion, Long> 
         ORDER BY t.fecha DESC
     """)
     List<Transaccion> findAllConDetallesOrderByFechaDesc();
+
+    // Para exportar a Excel: mismo JOIN FETCH de arriba, pero acotado al
+    // rango de fechas pedido (en vez de traer todo el historial y filtrar
+    // en memoria), para que exportar un mes puntual no dependa del tamaño
+    // total del historial.
+    @Query("""
+        SELECT DISTINCT t FROM Transaccion t
+        LEFT JOIN FETCH t.cliente
+        LEFT JOIN FETCH t.detalles d
+        LEFT JOIN FETCH d.producto
+        WHERE t.fecha >= :desde AND t.fecha <= :hasta
+        ORDER BY t.fecha ASC
+    """)
+    List<Transaccion> findConDetallesEntreFechas(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
 }
