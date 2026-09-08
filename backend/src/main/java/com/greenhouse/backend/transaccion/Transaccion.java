@@ -2,6 +2,7 @@ package com.greenhouse.backend.transaccion;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.greenhouse.backend.cliente.Cliente;
+import com.greenhouse.backend.config.ZonaHoraria;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -46,7 +47,7 @@ public class Transaccion {
 
     @Builder.Default
     @Column(nullable = false, updatable = false)
-    private LocalDateTime fecha = LocalDateTime.now();
+    private LocalDateTime fecha = LocalDateTime.now(ZonaHoraria.COSTA_RICA);
 
     @Builder.Default
     @OneToMany(mappedBy = "transaccion", cascade = CascadeType.ALL, orphanRemoval = true)
