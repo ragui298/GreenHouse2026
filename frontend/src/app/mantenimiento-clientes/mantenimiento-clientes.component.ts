@@ -114,9 +114,13 @@ export class MantenimientoClientesComponent implements OnInit {
         this.cancelar();
         this.cargar();
       },
-      error: () => {
+      error: (err) => {
         this.guardando.set(false);
-        this.error.set('No se pudo guardar el cliente.');
+        this.error.set(
+          err?.status === 0
+            ? 'No se pudo guardar: se perdió la conexión con el servidor (puede haber estado inactivo). Probá de nuevo.'
+            : 'No se pudo guardar el cliente.'
+        );
       }
     });
   }

@@ -1,8 +1,16 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
+import { TimeoutError, catchError, throwError, timeout } from 'rxjs';
 import { AuthService } from '../services/auth.service';
+
+// Sin un límite, si el backend se queda "colgado" (ej. una conexión vieja
+// contra la base que nunca responde en vez de fallar) la pantalla se queda
+// pegada en "Guardando..." para siempre, porque el navegador simplemente
+// sigue esperando. 45s da margen de sobra para el arranque en frío de
+// Render (hasta ~60s la primera vez que despierta) sin dejar que un
+// cuelgue real deje a alguien esperando indefinidamente.
+const TIMEOUT_MS = 45000;
 
 /**
  * Adjunta el JWT a cada request hacia la API y, si el backend responde
@@ -25,7 +33,14 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
     : req;
 
   return next(authReq).pipe(
+    timeout(TIMEOUT_MS),
     catchError((error) => {
+      if (error instanceof TimeoutError) {
+        // Se arma como un error "sin conexión" (status 0) para que las
+        // pantallas que ya manejan errores de red lo muestren igual, sin
+        // tener que enseñarles un caso nuevo.
+        return throwError(() => ({ status: 0, timeoutError: true }));
+      }
       if (error.status === 401) {
         authService.logout();
         router.navigate(['/login']);

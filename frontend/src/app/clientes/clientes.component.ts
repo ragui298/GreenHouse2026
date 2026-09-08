@@ -177,9 +177,13 @@ export class ClientesComponent implements OnInit {
         this.cancelarRegistro();
         this.cargarClientes();
       },
-      error: () => {
+      error: (err) => {
         this.guardandoTransaccion.set(false);
-        this.errorTransaccion.set('No se pudo registrar la transacción.');
+        this.errorTransaccion.set(
+          err?.status === 0
+            ? 'No se pudo registrar: se perdió la conexión con el servidor (puede haber estado inactivo). Probá de nuevo.'
+            : 'No se pudo registrar la transacción.'
+        );
       }
     });
   }
