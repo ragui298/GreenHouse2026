@@ -20,6 +20,7 @@ export class MantenimientoClientesComponent implements OnInit {
   readonly cargando = signal(true);
   readonly guardando = signal(false);
   readonly error = signal<string | null>(null);
+  readonly exito = signal<string | null>(null);
   readonly editandoId = signal<number | null>(null);
   readonly mostrarFormulario = signal(false);
   readonly tiposCliente = TIPOS_CLIENTE;
@@ -104,6 +105,7 @@ export class MantenimientoClientesComponent implements OnInit {
     };
 
     const id = this.editandoId();
+    const esEdicion = id !== null;
     const peticion = id
       ? this.clienteService.actualizar(id, datos)
       : this.clienteService.crear(datos);
@@ -113,6 +115,7 @@ export class MantenimientoClientesComponent implements OnInit {
         this.guardando.set(false);
         this.cancelar();
         this.cargar();
+        this.mostrarExito(esEdicion ? 'Cliente actualizado.' : `Cliente "${datos.nombre}" creado.`);
       },
       error: (err) => {
         this.guardando.set(false);
@@ -123,6 +126,11 @@ export class MantenimientoClientesComponent implements OnInit {
         );
       }
     });
+  }
+
+  private mostrarExito(mensaje: string): void {
+    this.exito.set(mensaje);
+    setTimeout(() => this.exito.set(null), 3500);
   }
 
   etiquetaTipo(tipo?: TipoCliente): string {

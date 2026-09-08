@@ -40,6 +40,7 @@ export class ClientesComponent implements OnInit {
   readonly registrandoClienteId = signal<number | null>(null);
   readonly guardandoTransaccion = signal(false);
   readonly errorTransaccion = signal<string | null>(null);
+  readonly exitoTransaccion = signal<string | null>(null);
 
   readonly tipo = signal<TipoTransaccion>('CARGO');
   readonly usarProductos = signal(false);
@@ -91,6 +92,11 @@ export class ClientesComponent implements OnInit {
         this.cargando.set(false);
       }
     });
+  }
+
+  private mostrarExito(mensaje: string): void {
+    this.exitoTransaccion.set(mensaje);
+    setTimeout(() => this.exitoTransaccion.set(null), 3500);
   }
 
   formatoColones(monto: number): string {
@@ -176,6 +182,7 @@ export class ClientesComponent implements OnInit {
         this.guardandoTransaccion.set(false);
         this.cancelarRegistro();
         this.cargarClientes();
+        this.mostrarExito(`Transacción registrada para ${cliente.nombre}.`);
       },
       error: (err) => {
         this.guardandoTransaccion.set(false);
