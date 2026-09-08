@@ -1,5 +1,6 @@
 package com.greenhouse.backend.exception;
 
+import com.greenhouse.backend.config.ZonaHoraria;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -78,7 +79,7 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<Map<String, Object>> build(HttpStatus status, String message) {
         Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
+        body.put("timestamp", LocalDateTime.now(ZonaHoraria.COSTA_RICA));
         body.put("status", status.value());
         body.put("error", message);
         return ResponseEntity.status(status).body(body);
