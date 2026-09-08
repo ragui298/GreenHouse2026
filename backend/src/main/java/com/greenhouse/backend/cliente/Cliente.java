@@ -1,6 +1,7 @@
 package com.greenhouse.backend.cliente;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.greenhouse.backend.config.ZonaHoraria;
 import com.greenhouse.backend.transaccion.Transaccion;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -45,7 +46,7 @@ public class Cliente {
 
     @Builder.Default
     @Column(nullable = false, updatable = false)
-    private LocalDateTime fechaRegistro = LocalDateTime.now();
+    private LocalDateTime fechaRegistro = LocalDateTime.now(ZonaHoraria.COSTA_RICA);
 
     @JsonIgnore
     @Builder.Default
@@ -61,7 +62,7 @@ public class Cliente {
             activo = true;
         }
         if (fechaRegistro == null) {
-            fechaRegistro = LocalDateTime.now();
+            fechaRegistro = LocalDateTime.now(ZonaHoraria.COSTA_RICA);
         }
     }
 }
