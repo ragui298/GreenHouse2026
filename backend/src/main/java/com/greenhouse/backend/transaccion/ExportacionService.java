@@ -23,7 +23,7 @@ import java.util.List;
 public class ExportacionService {
 
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-    private static final String[] COLUMNAS = { "Fecha", "Cliente", "Jornada", "Detalle", "Tipo", "Monto" };
+    private static final String[] COLUMNAS = { "Fecha", "ID Cliente", "Cliente", "Jornada", "Detalle", "Tipo", "Monto" };
 
     private final TransaccionRepository transaccionRepository;
 
@@ -35,13 +35,14 @@ public class ExportacionService {
 
             CellStyle estiloEncabezado = crearEstiloEncabezado(workbook);
             CellStyle estiloMonto = crearEstiloMonto(workbook);
+            CellStyle estiloEntero = crearEstiloEntero(workbook);
 
             escribirEncabezado(hoja, estiloEncabezado);
 
             int numeroFila = 1;
             BigDecimal total = BigDecimal.ZERO;
             for (Transaccion t : transacciones) {
-                escribirFila(hoja, numeroFila++, t, estiloMonto);
+                escribirFila(hoja, numeroFila++, t, estiloMonto, estiloEntero);
                 total = total.add(t.getTipo() == TipoTransaccion.CARGO ? t.getMonto() : t.getMonto().negate());
             }
 
@@ -73,6 +74,12 @@ public class ExportacionService {
         return estilo;
     }
 
+    private CellStyle crearEstiloEntero(XSSFWorkbook workbook) {
+        CellStyle estilo = workbook.createCellStyle();
+        estilo.setDataFormat(workbook.createDataFormat().getFormat("0"));
+        return estilo;
+    }
+
     private void escribirEncabezado(Sheet hoja, CellStyle estilo) {
         Row fila = hoja.createRow(0);
         for (int i = 0; i < COLUMNAS.length; i++) {
@@ -82,15 +89,20 @@ public class ExportacionService {
         }
     }
 
-    private void escribirFila(Sheet hoja, int numeroFila, Transaccion t, CellStyle estiloMonto) {
+    private void escribirFila(Sheet hoja, int numeroFila, Transaccion t, CellStyle estiloMonto, CellStyle estiloEntero) {
         Row fila = hoja.createRow(numeroFila);
         fila.createCell(0).setCellValue(t.getFecha().format(FORMATO_FECHA));
-        fila.createCell(1).setCellValue(t.getCliente().getNombre());
-        fila.createCell(2).setCellValue(etiquetaJornada(t.getCliente().getTipoCliente()));
-        fila.createCell(3).setCellValue(detalle(t));
-        fila.createCell(4).setCellValue(t.getTipo() == TipoTransaccion.CARGO ? "Cargo" : "Abono");
 
-        Cell celdaMonto = fila.createCell(5);
+        Cell celdaIdCliente = fila.createCell(1);
+        celdaIdCliente.setCellValue(t.getCliente().getId());
+        celdaIdCliente.setCellStyle(estiloEntero);
+
+        fila.createCell(2).setCellValue(t.getCliente().getNombre());
+        fila.createCell(3).setCellValue(etiquetaJornada(t.getCliente().getTipoCliente()));
+        fila.createCell(4).setCellValue(detalle(t));
+        fila.createCell(5).setCellValue(t.getTipo() == TipoTransaccion.CARGO ? "Cargo" : "Abono");
+
+        Cell celdaMonto = fila.createCell(6);
         double monto = t.getTipo() == TipoTransaccion.CARGO ? t.getMonto().doubleValue() : -t.getMonto().doubleValue();
         celdaMonto.setCellValue(monto);
         celdaMonto.setCellStyle(estiloMonto);
@@ -98,11 +110,11 @@ public class ExportacionService {
 
     private void escribirTotal(Sheet hoja, int numeroFila, BigDecimal total, CellStyle estiloEncabezado, CellStyle estiloMonto) {
         Row fila = hoja.createRow(numeroFila);
-        Cell celdaEtiqueta = fila.createCell(3);
+        Cell celdaEtiqueta = fila.createCell(4);
         celdaEtiqueta.setCellValue("Total");
         celdaEtiqueta.setCellStyle(estiloEncabezado);
 
-        Cell celdaTotal = fila.createCell(5);
+        Cell celdaTotal = fila.createCell(6);
         celdaTotal.setCellValue(total.doubleValue());
         celdaTotal.setCellStyle(estiloMonto);
     }
