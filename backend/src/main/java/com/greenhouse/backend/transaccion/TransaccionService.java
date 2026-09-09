@@ -6,14 +6,18 @@ import com.greenhouse.backend.exception.ResourceNotFoundException;
 import com.greenhouse.backend.producto.Producto;
 import com.greenhouse.backend.producto.ProductoRepository;
 import com.greenhouse.backend.transaccion.dto.DetalleRequest;
+import com.greenhouse.backend.transaccion.dto.ReporteSemanalResponse;
 import com.greenhouse.backend.transaccion.dto.TransaccionRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -70,6 +74,29 @@ public class TransaccionService {
 
     public List<Transaccion> listarTodas() {
         return transaccionRepository.findAllConDetallesOrderByFechaDesc();
+    }
+
+    public ReporteSemanalResponse reporteSemanal(LocalDate desde, LocalDate hasta) {
+        List<Transaccion> transacciones;
+        Map<Long, BigDecimal> saldosIniciales;
+
+        if (desde != null && hasta != null) {
+            transacciones = transaccionRepository.findConDetallesEntreFechas(desde.atStartOfDay(), hasta.atTime(23, 59, 59));
+            saldosIniciales = transaccionRepository.calcularSaldosPorClienteAntesDe(desde.atStartOfDay()).stream()
+                    .collect(Collectors.toMap(fila -> (Long) fila[0], fila -> (BigDecimal) fila[1]));
+        } else {
+            // Sin rango de fechas: se sigue mostrando todo el historial,
+            // como antes de tener el reporte semanal. Acá no aplica un
+            // "saldo inicial" (no hay un "antes de" sin fecha), así que el
+            // mapa queda vacío.
+            transacciones = listarTodas();
+            saldosIniciales = Map.of();
+        }
+
+        return ReporteSemanalResponse.builder()
+                .transacciones(transacciones)
+                .saldosIniciales(saldosIniciales)
+                .build();
     }
 
     public BigDecimal saldoCliente(Long clienteId) {

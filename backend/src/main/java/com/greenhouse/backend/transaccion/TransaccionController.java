@@ -1,5 +1,6 @@
 package com.greenhouse.backend.transaccion;
 
+import com.greenhouse.backend.transaccion.dto.ReporteSemanalResponse;
 import com.greenhouse.backend.transaccion.dto.TransaccionRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,8 +37,10 @@ public class TransaccionController {
 
     @GetMapping("/reporte")
     @PreAuthorize("@permisoService.tieneAcceso('REPORTES')")
-    public List<Transaccion> reporte() {
-        return transaccionService.listarTodas();
+    public ReporteSemanalResponse reporte(
+            @RequestParam(value = "desde", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(value = "hasta", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        return transaccionService.reporteSemanal(desde, hasta);
     }
 
     @GetMapping("/cliente/{clienteId}")

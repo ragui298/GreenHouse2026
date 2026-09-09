@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Transaccion, TransaccionRequest } from '../models/transaccion.model';
+import { ReporteSemanal, Transaccion, TransaccionRequest } from '../models/transaccion.model';
 
 @Injectable({ providedIn: 'root' })
 export class TransaccionService {
@@ -18,8 +18,11 @@ export class TransaccionService {
     return this.http.get<Transaccion[]>(this.apiUrl);
   }
 
-  reportarTodas(): Observable<Transaccion[]> {
-    return this.http.get<Transaccion[]>(`${this.apiUrl}/reporte`);
+  reportarTodas(desde?: string, hasta?: string): Observable<ReporteSemanal> {
+    const params: Record<string, string> = {};
+    if (desde) params['desde'] = desde;
+    if (hasta) params['hasta'] = hasta;
+    return this.http.get<ReporteSemanal>(`${this.apiUrl}/reporte`, { params });
   }
 
   historialCliente(clienteId: number): Observable<Transaccion[]> {
