@@ -166,8 +166,9 @@ export class ReportesComponent {
     // No usamos Intl.NumberFormat acá porque el separador de miles de
     // 'es-CR' varía según el motor (a veces da espacio en vez de punto).
     // Se arma a mano para que siempre salga "1.234,56", como se acostumbra
-    // en los recibos y en el mensaje de WhatsApp.
-    const [entero, decimales] = Math.abs(monto).toFixed(2).split('.');
+    // en los recibos y en el mensaje de WhatsApp. Sin Math.abs(): si el
+    // monto es negativo (saldo a favor), el signo queda en el número.
+    const [entero, decimales] = monto.toFixed(2).split('.');
     const enteroConPuntos = entero.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     return `${enteroConPuntos},${decimales}`;
   }
@@ -183,8 +184,9 @@ export class ReportesComponent {
 
   private formatoMontoMensaje(monto: number): string {
     // Para el mensaje de WhatsApp los montos van sin decimales (acá nunca
-    // se manejan céntimos): "5.000" en vez de "5.000,00".
-    return Math.abs(monto).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    // se manejan céntimos): "5.000" en vez de "5.000,00". Sin Math.abs():
+    // un total negativo (a favor) sale como "-5.000", no "5.000".
+    return monto.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   }
 
   enviarPorWhatsapp(grupo: GrupoReporte): void {
@@ -209,12 +211,11 @@ export class ReportesComponent {
       lineas.push(`${detalle} ${signo}${this.formatoMontoMensaje(t.monto)}`);
     }
 
-    const etiquetaTotal = grupo.total < 0 ? 'A favor' : 'Total';
     const mensaje = [
       '- Consumo Soda Colegio',
       ...lineas,
       '------------------------------',
-      `${etiquetaTotal} ${this.formatoMontoMensaje(grupo.total)}`,
+      `Total ${this.formatoMontoMensaje(grupo.total)}`,
       '',
       'Bendiciones Muchas Gracias!!'
     ].join('\n');
