@@ -50,7 +50,7 @@
               <span
                 class="ledger-saldo mono"
                 [class.debt]="cliente.saldoActual > 0"
-                [class.paid]="cliente.saldoActual === 0"
+                [class.paid]="cliente.saldoActual <= 0"
               >
                 {{ formatoColones(cliente.saldoActual) }}
               </span>

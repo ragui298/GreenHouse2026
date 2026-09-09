@@ -63,7 +63,7 @@
           </div>
           <div class="reporte-acciones">
             <span class="reporte-total mono" [class.debt]="grupo.total > 0" [class.paid]="grupo.total < 0">
-              Total {{ formatoMonto(grupo.total) }}
+              {{ grupo.total < 0 ? 'A favor' : 'Total' }} {{ formatoMonto(grupo.total) }}
             </span>
             <button class="btn-primary" (click)="enviarPorWhatsapp(grupo)">Enviar por WhatsApp</button>
           </div>

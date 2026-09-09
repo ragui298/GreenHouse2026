@@ -209,11 +209,12 @@ export class ReportesComponent {
       lineas.push(`${detalle} ${signo}${this.formatoMontoMensaje(t.monto)}`);
     }
 
+    const etiquetaTotal = grupo.total < 0 ? 'A favor' : 'Total';
     const mensaje = [
       '- Consumo Soda Colegio',
       ...lineas,
       '------------------------------',
-      `Total ${this.formatoMontoMensaje(grupo.total)}`,
+      `${etiquetaTotal} ${this.formatoMontoMensaje(grupo.total)}`,
       '',
       'Bendiciones Muchas Gracias!!'
     ].join('\n');
