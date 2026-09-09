@@ -8,7 +8,13 @@ import { Cliente, TipoCliente, TIPOS_CLIENTE } from '../core/models/cliente.mode
 interface GrupoReporte {
   cliente: Cliente;
   transacciones: Transaccion[];
-  total: number;
+  consumoSemana: number;
+  // Si no se pidió un rango de fechas (Desde vacío), no hay un "antes de"
+  // bien definido -- en ese caso no se muestra saldo inicial ni total,
+  // solo el consumo, como funcionaba el reporte antes de esto.
+  tieneSaldoInicial: boolean;
+  saldoInicial: number;
+  saldoFinal: number;
 }
 
 @Component({
@@ -22,6 +28,7 @@ export class ReportesComponent {
   private readonly transaccionService = inject(TransaccionService);
 
   readonly transacciones = signal<Transaccion[]>([]);
+  readonly saldosIniciales = signal<Record<number, number>>({});
   readonly cargando = signal(false);
   readonly error = signal<string | null>(null);
   readonly reporteGenerado = signal(false);
@@ -54,16 +61,15 @@ export class ReportesComponent {
   readonly grupos = computed<GrupoReporte[]>(() => {
     const tipoCliente = this.filtroTipoClienteAplicado();
     const nombre = this.busquedaNombreAplicada().trim().toLowerCase();
-    const desde = this.fechaDesdeAplicada() ? new Date(`${this.fechaDesdeAplicada()}T00:00:00`) : null;
-    const hasta = this.fechaHastaAplicada() ? new Date(`${this.fechaHastaAplicada()}T23:59:59`) : null;
+    const tieneRango = !!this.fechaDesdeAplicada();
+    const saldos = this.saldosIniciales();
 
+    // El backend ya devuelve solo las transacciones del rango pedido (si
+    // se pidió uno) -- acá nada más se filtra por jornada/nombre.
     const filtradas = this.transacciones().filter(t => {
       const coincideTipoCliente = tipoCliente === 'TODOS' || t.cliente.tipoCliente === tipoCliente;
       const coincideNombre = !nombre || t.cliente.nombre.toLowerCase().includes(nombre);
-      const fecha = new Date(t.fecha);
-      const coincideDesde = !desde || fecha >= desde;
-      const coincideHasta = !hasta || fecha <= hasta;
-      return coincideTipoCliente && coincideNombre && coincideDesde && coincideHasta;
+      return coincideTipoCliente && coincideNombre;
     });
 
     const porCliente = new Map<number, GrupoReporte>();
@@ -72,16 +78,25 @@ export class ReportesComponent {
       if (existente) {
         existente.transacciones.push(t);
       } else {
-        porCliente.set(t.cliente.id, { cliente: t.cliente, transacciones: [t], total: 0 });
+        porCliente.set(t.cliente.id, {
+          cliente: t.cliente,
+          transacciones: [t],
+          consumoSemana: 0,
+          tieneSaldoInicial: tieneRango,
+          saldoInicial: 0,
+          saldoFinal: 0
+        });
       }
     }
 
     for (const grupo of porCliente.values()) {
       grupo.transacciones.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
-      grupo.total = grupo.transacciones.reduce(
+      grupo.consumoSemana = grupo.transacciones.reduce(
         (acc, t) => acc + (t.tipo === 'CARGO' ? t.monto : -t.monto),
         0
       );
+      grupo.saldoInicial = tieneRango ? (saldos[grupo.cliente.id] ?? 0) : 0;
+      grupo.saldoFinal = grupo.saldoInicial + grupo.consumoSemana;
     }
 
     return Array.from(porCliente.values()).sort((a, b) => a.cliente.nombre.localeCompare(b.cliente.nombre));
@@ -100,9 +115,10 @@ export class ReportesComponent {
 
     this.cargando.set(true);
     this.error.set(null);
-    this.transaccionService.reportarTodas().subscribe({
-      next: (transacciones) => {
-        this.transacciones.set(transacciones);
+    this.transaccionService.reportarTodas(this.fechaDesde() || undefined, this.fechaHasta() || undefined).subscribe({
+      next: (respuesta) => {
+        this.transacciones.set(respuesta.transacciones);
+        this.saldosIniciales.set(respuesta.saldosIniciales);
         this.reporteGenerado.set(true);
         this.cargando.set(false);
       },
@@ -154,6 +170,15 @@ export class ReportesComponent {
     return this.tiposCliente.find(t => t.valor === tipo)?.etiqueta ?? 'Sin jornada';
   }
 
+  // "Debe" si el saldo es positivo, "A favor" si es negativo, "Al día" si
+  // es exactamente cero (este último caso no se muestra en pantalla, pero
+  // la función queda completa por si se necesita en otro lado).
+  etiquetaSaldo(monto: number): string {
+    if (monto > 0) return 'Debe';
+    if (monto < 0) return 'A favor';
+    return 'Al día';
+  }
+
   formatoFecha(fecha: string): string {
     return new Intl.DateTimeFormat('es-CR', {
       day: '2-digit',
@@ -185,7 +210,7 @@ export class ReportesComponent {
   private formatoMontoMensaje(monto: number): string {
     // Para el mensaje de WhatsApp los montos van sin decimales (acá nunca
     // se manejan céntimos): "5.000" en vez de "5.000,00". Sin Math.abs():
-    // un total negativo (a favor) sale como "-5.000", no "5.000".
+    // un saldo a favor sale como "-5.000", no "5.000".
     return monto.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   }
 
@@ -211,14 +236,32 @@ export class ReportesComponent {
       lineas.push(`${detalle} ${signo}${this.formatoMontoMensaje(t.monto)}`);
     }
 
-    const mensaje = [
-      '- Consumo Soda Colegio',
+    const partes = [
+      '🥪 Soda Colegio',
+      '--  CONSUMO SEMANAL --',
       ...lineas,
-      '------------------------------',
-      `Total ${this.formatoMontoMensaje(grupo.total)}`,
-      '',
-      'Bendiciones Muchas Gracias!!'
-    ].join('\n');
+      '------------------------------------',
+      `🛒 TOTAL CONSUMO : ${this.formatoMontoMensaje(grupo.consumoSemana)}`
+    ];
+
+    if (grupo.tieneSaldoInicial && grupo.saldoInicial !== 0) {
+      const inicialAFavor = grupo.saldoInicial < 0;
+      partes.push(
+        `${inicialAFavor ? '✅' : '🔴'} SALDO ${inicialAFavor ? 'A FAVOR' : 'ADEUDADO'} : ${this.formatoMontoMensaje(grupo.saldoInicial)}`
+      );
+      partes.push('--------------------------------');
+
+      const finalAFavor = grupo.saldoFinal < 0;
+      const finalAdeudado = grupo.saldoFinal > 0;
+      const emojiFinal = finalAFavor ? '✅' : finalAdeudado ? '🔴' : '⚪';
+      const etiquetaFinal = finalAFavor ? 'TOTAL A FAVOR' : finalAdeudado ? 'TOTAL ADEUDADO' : 'TOTAL';
+      partes.push(`${emojiFinal} ${etiquetaFinal} : ${this.formatoMontoMensaje(grupo.saldoFinal)}`);
+    }
+
+    partes.push('');
+    partes.push('*Muchas gracias y bendiciones*');
+
+    const mensaje = partes.join('\n');
 
     // Números de Costa Rica se guardan a 8 dígitos sin código de país (506).
     const numero = soloDigitos.length === 8 ? `506${soloDigitos}` : soloDigitos;

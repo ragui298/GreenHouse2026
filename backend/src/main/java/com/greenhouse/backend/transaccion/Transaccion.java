@@ -17,7 +17,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "transacciones")
+@Table(name = "transacciones", indexes = {
+        // El saldo de un cliente (calcularSaldo) y el saldo inicial de una
+        // semana (calcularSaldosPorClienteAntesDe) filtran por cliente_id;
+        // el reporte semanal y la exportación filtran por fecha. Sin estos
+        // índices, esas consultas recorren toda la tabla -- hoy es chica y
+        // no se nota, pero con años de historial sí importa. Se agregan acá
+        // (no como SQL manual) porque ddl-auto=update los crea solo.
+        @Index(name = "idx_transacciones_cliente_id", columnList = "cliente_id"),
+        @Index(name = "idx_transacciones_fecha", columnList = "fecha")
+})
 @Data
 @Builder
 @NoArgsConstructor

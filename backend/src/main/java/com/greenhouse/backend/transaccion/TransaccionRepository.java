@@ -67,4 +67,19 @@ public interface TransaccionRepository extends JpaRepository<Transaccion, Long> 
         ORDER BY t.fecha ASC
     """)
     List<Transaccion> findConDetallesEntreFechas(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
+
+    // Saldo acumulado de cada cliente hasta ANTES de una fecha (todo lo de
+    // semanas previas, sin contar la semana que se está reportando). Es lo
+    // que el reporte semanal muestra como "saldo inicial": lo que el
+    // cliente ya arrastraba antes de esta semana.
+    @Query("""
+        SELECT t.cliente.id, COALESCE(SUM(
+            CASE WHEN t.tipo = com.greenhouse.backend.transaccion.TipoTransaccion.CARGO THEN t.monto
+                 ELSE -t.monto END
+        ), 0)
+        FROM Transaccion t
+        WHERE t.fecha < :antesDe
+        GROUP BY t.cliente.id
+    """)
+    List<Object[]> calcularSaldosPorClienteAntesDe(@Param("antesDe") LocalDateTime antesDe);
 }
