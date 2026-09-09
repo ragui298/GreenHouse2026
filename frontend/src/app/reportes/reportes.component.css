@@ -67,14 +67,41 @@
   gap: 14px;
 }
 
-.reporte-total {
-  font-size: 15px;
-  font-weight: 600;
-  white-space: nowrap;
+.reporte-resumen {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
 }
 
-.reporte-total.debt { color: var(--color-debt); }
-.reporte-total.paid { color: var(--color-paid); }
+.resumen-linea {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13.5px;
+}
+
+.resumen-label {
+  color: var(--color-ink-soft);
+}
+
+.resumen-valor.debt { color: var(--color-debt); }
+.resumen-valor.paid { color: var(--color-paid); }
+
+.resumen-total {
+  padding-top: 6px;
+  margin-top: 4px;
+  border-top: 1px solid var(--color-border);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.resumen-total .resumen-label {
+  color: var(--color-ink);
+}
 
 .mono {
   font-variant-numeric: tabular-nums;

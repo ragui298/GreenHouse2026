@@ -62,11 +62,29 @@
             }
           </div>
           <div class="reporte-acciones">
-            <span class="reporte-total mono" [class.debt]="grupo.total > 0" [class.paid]="grupo.total < 0">
-              Total {{ formatoMonto(grupo.total) }}
-            </span>
             <button class="btn-primary" (click)="enviarPorWhatsapp(grupo)">Enviar por WhatsApp</button>
           </div>
+        </div>
+
+        <div class="reporte-resumen">
+          <div class="resumen-linea">
+            <span class="resumen-label">{{ grupo.tieneSaldoInicial ? 'Consumo de la semana' : 'Total' }}</span>
+            <span class="resumen-valor mono">{{ formatoMonto(grupo.consumoSemana) }}</span>
+          </div>
+          @if (grupo.tieneSaldoInicial && grupo.saldoInicial !== 0) {
+            <div class="resumen-linea">
+              <span class="resumen-label">Saldo inicial</span>
+              <span class="resumen-valor mono" [class.debt]="grupo.saldoInicial > 0" [class.paid]="grupo.saldoInicial < 0">
+                {{ etiquetaSaldo(grupo.saldoInicial) }} {{ formatoMonto(grupo.saldoInicial) }}
+              </span>
+            </div>
+            <div class="resumen-linea resumen-total">
+              <span class="resumen-label">Total</span>
+              <span class="resumen-valor mono" [class.debt]="grupo.saldoFinal > 0" [class.paid]="grupo.saldoFinal < 0">
+                {{ etiquetaSaldo(grupo.saldoFinal) }} {{ formatoMonto(grupo.saldoFinal) }}
+              </span>
+            </div>
+          }
         </div>
 
         <div class="table-wrap">

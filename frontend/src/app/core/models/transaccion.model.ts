@@ -32,3 +32,11 @@ export interface Transaccion {
   fecha: string;
   detalles: DetalleTransaccion[];
 }
+
+// Respuesta de /api/transacciones/reporte cuando se pide un rango de
+// fechas: las transacciones de ese rango, más lo que cada cliente ya
+// arrastraba de ANTES de "desde" (positivo = debe, negativo = a favor).
+export interface ReporteSemanal {
+  transacciones: Transaccion[];
+  saldosIniciales: Record<number, number>;
+}
