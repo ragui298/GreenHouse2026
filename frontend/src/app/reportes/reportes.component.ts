@@ -214,6 +214,24 @@ export class ReportesComponent {
     return monto.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   }
 
+  // Junta la fecha una sola vez seguida de sus transacciones, sin repetirla
+  // en cada línea. Se llama por separado para consumos y para abonos, ya
+  // que el mensaje de WhatsApp ahora los muestra en bloques distintos.
+  private agruparTransaccionesPorFecha(transacciones: Transaccion[]): string[] {
+    const lineas: string[] = [];
+    let fechaAnterior = '';
+    for (const t of transacciones) {
+      const fechaCorta = this.formatoFechaCorta(t.fecha);
+      if (fechaCorta !== fechaAnterior) {
+        lineas.push(fechaCorta);
+        fechaAnterior = fechaCorta;
+      }
+      const detalle = t.descripcion?.trim() || (t.tipo === 'CARGO' ? 'Cargo' : 'Abono');
+      lineas.push(`${detalle} ${this.formatoMontoMensaje(t.monto)}`);
+    }
+    return lineas;
+  }
+
   enviarPorWhatsapp(grupo: GrupoReporte): void {
     const soloDigitos = grupo.cliente.telefono?.replace(/\D/g, '') ?? '';
     if (!soloDigitos) {
@@ -221,45 +239,64 @@ export class ReportesComponent {
       return;
     }
 
-    // Se agrupa por fecha: la fecha aparece una sola vez, seguida de los
-    // consumos de ese día, sin repetirla en cada línea.
-    const lineas: string[] = [];
-    let fechaAnterior = '';
-    for (const t of grupo.transacciones) {
-      const fechaCorta = this.formatoFechaCorta(t.fecha);
-      if (fechaCorta !== fechaAnterior) {
-        lineas.push(fechaCorta);
-        fechaAnterior = fechaCorta;
-      }
-      const detalle = t.descripcion?.trim() || (t.tipo === 'CARGO' ? 'Cargo' : 'Abono');
-      const signo = t.tipo === 'ABONO' ? '-' : '';
-      lineas.push(`${detalle} ${signo}${this.formatoMontoMensaje(t.monto)}`);
-    }
+    const cargos = grupo.transacciones.filter(t => t.tipo === 'CARGO');
+    const abonos = grupo.transacciones.filter(t => t.tipo === 'ABONO');
+    const totalCargos = cargos.reduce((acc, t) => acc + t.monto, 0);
+    const totalAbonos = abonos.reduce((acc, t) => acc + t.monto, 0);
 
-    const partes = [
-      '🥪 Soda Colegio',
-      '--  CONSUMO SEMANAL --',
-      ...lineas,
-      '------------------------------------',
-      `🛒 TOTAL CONSUMO : ${this.formatoMontoMensaje(grupo.consumoSemana)}`
+    const partes: string[] = [
+      '-- CONSUMO EN SODA --',
+      `NOMBRE: ${grupo.cliente.nombre.toUpperCase()}`
     ];
 
+    // A diferencia de formatoMontoMensaje() a secas (que deja el signo tal
+    // cual), acá el signo se expresa con la palabra entre paréntesis, así
+    // que el monto siempre va en valor absoluto.
     if (grupo.tieneSaldoInicial && grupo.saldoInicial !== 0) {
-      const inicialAFavor = grupo.saldoInicial < 0;
-      partes.push(
-        `${inicialAFavor ? '✅' : '🔴'} SALDO ${inicialAFavor ? 'A FAVOR' : 'ADEUDADO'} : ${this.formatoMontoMensaje(grupo.saldoInicial)}`
-      );
-      partes.push('--------------------------------');
-
-      const finalAFavor = grupo.saldoFinal < 0;
-      const finalAdeudado = grupo.saldoFinal > 0;
-      const emojiFinal = finalAFavor ? '✅' : finalAdeudado ? '🔴' : '⚪';
-      const etiquetaFinal = finalAFavor ? 'TOTAL A FAVOR' : finalAdeudado ? 'TOTAL ADEUDADO' : 'TOTAL';
-      partes.push(`${emojiFinal} ${etiquetaFinal} : ${this.formatoMontoMensaje(grupo.saldoFinal)}`);
+      const etiquetaInicial = grupo.saldoInicial > 0 ? 'Adeudado' : 'A favor';
+      partes.push(`SALDO ANTERIOR: ${this.formatoMontoMensaje(Math.abs(grupo.saldoInicial))} (${etiquetaInicial})`);
     }
 
-    partes.push('');
-    partes.push('*Muchas gracias y bendiciones*');
+    if (cargos.length > 0) {
+      partes.push(
+        '',
+        '',
+        '------CONSUMOS-------------',
+        ...this.agruparTransaccionesPorFecha(cargos),
+        '---------------------------------',
+        '---------------------------------',
+        `TOTAL CONSUMIDO : ${this.formatoMontoMensaje(totalCargos)}`,
+        '---------------------------------'
+      );
+    }
+
+    if (abonos.length > 0) {
+      partes.push(
+        '',
+        '',
+        '++++++++++++++++++++',
+        '+++++ABONOS+++++++++',
+        ...this.agruparTransaccionesPorFecha(abonos),
+        '++++++++++++++++++++',
+        '++++++++++++++++++++',
+        `TOTAL ABONOS : ${this.formatoMontoMensaje(totalAbonos)}`,
+        '++++++++++++++++++++'
+      );
+    }
+
+    const saldoActual = grupo.saldoFinal;
+    const emojiActual = saldoActual > 0 ? '🔴' : saldoActual < 0 ? '✅' : '⚪';
+    const etiquetaActual = saldoActual > 0 ? ' (Adeudado)' : saldoActual < 0 ? ' (A favor)' : '';
+    partes.push(
+      '',
+      '',
+      '',
+      '---------------------------------',
+      '---------------------------------',
+      `${emojiActual} SALDO ACTUAL : ${this.formatoMontoMensaje(Math.abs(saldoActual))}${etiquetaActual}`,
+      '',
+      '*Muchas gracias y bendiciones*'
+    );
 
     const mensaje = partes.join('\n');
 
