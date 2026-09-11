@@ -18,12 +18,8 @@
       (ngModelChange)="busquedaNombre.set($event)"
     />
     <div class="form-field rango-fechas">
-      <label for="fechaDesde">Desde</label>
+      <label for="fechaDesde">Desde (hasta hoy)</label>
       <input id="fechaDesde" type="date" class="form-input" [ngModel]="fechaDesde()" (ngModelChange)="fechaDesde.set($event)" />
-    </div>
-    <div class="form-field rango-fechas">
-      <label for="fechaHasta">Hasta</label>
-      <input id="fechaHasta" type="date" class="form-input" [ngModel]="fechaHasta()" (ngModelChange)="fechaHasta.set($event)" />
     </div>
     <button class="btn-primary" (click)="generarReporte()" [disabled]="cargando()">
       {{ cargando() ? 'Generando…' : 'Generar reporte' }}
@@ -91,28 +87,32 @@
           </div>
         </div>
 
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Detalle</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (t of grupo.transacciones; track t.id) {
+        @if (grupo.transacciones.length === 0) {
+          <p class="state-message sin-movimientos">Sin movimientos en este rango — solo tiene saldo pendiente de antes.</p>
+        } @else {
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
                 <tr>
-                  <td>{{ formatoFecha(t.fecha) }}</td>
-                  <td>{{ t.descripcion?.trim() || (t.tipo === 'CARGO' ? 'Cargo' : 'Abono') }}</td>
-                  <td class="mono" [class.debt]="t.tipo === 'CARGO'" [class.paid]="t.tipo === 'ABONO'">
-                    {{ t.tipo === 'ABONO' ? '-' : '' }}{{ formatoMonto(t.monto) }}
-                  </td>
+                  <th>Fecha</th>
+                  <th>Detalle</th>
+                  <th></th>
                 </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                @for (t of grupo.transacciones; track t.id) {
+                  <tr>
+                    <td>{{ formatoFecha(t.fecha) }}</td>
+                    <td>{{ t.descripcion?.trim() || (t.tipo === 'CARGO' ? 'Cargo' : 'Abono') }}</td>
+                    <td class="mono" [class.debt]="t.tipo === 'CARGO'" [class.paid]="t.tipo === 'ABONO'">
+                      {{ t.tipo === 'ABONO' ? '-' : '' }}{{ formatoMonto(t.monto) }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
       </div>
     }
   }
