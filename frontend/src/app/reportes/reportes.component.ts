@@ -9,6 +9,10 @@ interface GrupoReporte {
   cliente: Cliente;
   transacciones: Transaccion[];
   consumoSemana: number;
+  // Cargos y abonos del período por separado, para el desglose del
+  // resumen (Consumo / Abonos) y para el mensaje de WhatsApp.
+  totalCargos: number;
+  totalAbonos: number;
   // Si no se pidió un rango de fechas (Desde vacío), no hay un "antes de"
   // bien definido -- en ese caso no se muestra saldo inicial ni total,
   // solo el consumo, como funcionaba el reporte antes de esto.
@@ -82,6 +86,8 @@ export class ReportesComponent {
           cliente: t.cliente,
           transacciones: [t],
           consumoSemana: 0,
+          totalCargos: 0,
+          totalAbonos: 0,
           tieneSaldoInicial: tieneRango,
           saldoInicial: 0,
           saldoFinal: 0
@@ -91,10 +97,13 @@ export class ReportesComponent {
 
     for (const grupo of porCliente.values()) {
       grupo.transacciones.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
-      grupo.consumoSemana = grupo.transacciones.reduce(
-        (acc, t) => acc + (t.tipo === 'CARGO' ? t.monto : -t.monto),
-        0
-      );
+      grupo.totalCargos = grupo.transacciones
+        .filter(t => t.tipo === 'CARGO')
+        .reduce((acc, t) => acc + t.monto, 0);
+      grupo.totalAbonos = grupo.transacciones
+        .filter(t => t.tipo === 'ABONO')
+        .reduce((acc, t) => acc + t.monto, 0);
+      grupo.consumoSemana = grupo.totalCargos - grupo.totalAbonos;
       grupo.saldoInicial = tieneRango ? (saldos[grupo.cliente.id] ?? 0) : 0;
       grupo.saldoFinal = grupo.saldoInicial + grupo.consumoSemana;
     }
@@ -241,8 +250,6 @@ export class ReportesComponent {
 
     const cargos = grupo.transacciones.filter(t => t.tipo === 'CARGO');
     const abonos = grupo.transacciones.filter(t => t.tipo === 'ABONO');
-    const totalCargos = cargos.reduce((acc, t) => acc + t.monto, 0);
-    const totalAbonos = abonos.reduce((acc, t) => acc + t.monto, 0);
 
     const partes: string[] = [
       '-- CONSUMO EN SODA --',
@@ -265,7 +272,7 @@ export class ReportesComponent {
         ...this.agruparTransaccionesPorFecha(cargos),
         '---------------------------------',
         '---------------------------------',
-        `TOTAL CONSUMIDO : ${this.formatoMontoMensaje(totalCargos)}`,
+        `TOTAL CONSUMIDO : ${this.formatoMontoMensaje(grupo.totalCargos)}`,
         '---------------------------------'
       );
     }
@@ -279,7 +286,7 @@ export class ReportesComponent {
         ...this.agruparTransaccionesPorFecha(abonos),
         '++++++++++++++++++++',
         '++++++++++++++++++++',
-        `TOTAL ABONOS : ${this.formatoMontoMensaje(totalAbonos)}`,
+        `TOTAL ABONOS : ${this.formatoMontoMensaje(grupo.totalAbonos)}`,
         '++++++++++++++++++++'
       );
     }
