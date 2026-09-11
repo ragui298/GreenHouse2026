@@ -114,6 +114,11 @@
   overflow-x: auto;
 }
 
+.sin-movimientos {
+  padding: 14px 0 4px;
+  font-size: 13.5px;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
