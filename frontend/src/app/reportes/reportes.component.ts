@@ -5,6 +5,18 @@ import { TransaccionService } from '../core/services/transaccion.service';
 import { Transaccion } from '../core/models/transaccion.model';
 import { Cliente, TipoCliente, TIPOS_CLIENTE } from '../core/models/cliente.model';
 
+// Fecha de hoy en formato YYYY-MM-DD (lo que espera <input type="date">),
+// en hora local del navegador. Se usa como valor por defecto de los
+// filtros: si el usuario no toca las fechas, el reporte es "el de hoy" en
+// vez de todo el historial.
+function fechaHoyISO(): string {
+  const hoy = new Date();
+  const anio = hoy.getFullYear();
+  const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+  const dia = String(hoy.getDate()).padStart(2, '0');
+  return `${anio}-${mes}-${dia}`;
+}
+
 interface GrupoReporte {
   cliente: Cliente;
   transacciones: Transaccion[];
@@ -43,8 +55,8 @@ export class ReportesComponent {
   // terminando de elegir los filtros.
   readonly filtroTipoCliente = signal<TipoCliente | 'TODOS'>('TODOS');
   readonly busquedaNombre = signal('');
-  readonly fechaDesde = signal('');
-  readonly fechaHasta = signal('');
+  readonly fechaDesde = signal(fechaHoyISO());
+  readonly fechaHasta = signal(fechaHoyISO());
   readonly tiposCliente = TIPOS_CLIENTE;
 
   // Copia de los filtros de arriba tomada en el momento de generar el
