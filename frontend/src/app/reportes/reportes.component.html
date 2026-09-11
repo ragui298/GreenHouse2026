@@ -67,24 +67,28 @@
         </div>
 
         <div class="reporte-resumen">
-          <div class="resumen-linea">
-            <span class="resumen-label">{{ grupo.tieneSaldoInicial ? 'Consumo de la semana' : 'Total' }}</span>
-            <span class="resumen-valor mono">{{ formatoMonto(grupo.consumoSemana) }}</span>
-          </div>
-          @if (grupo.tieneSaldoInicial && grupo.saldoInicial !== 0) {
+          @if (grupo.tieneSaldoInicial) {
             <div class="resumen-linea">
-              <span class="resumen-label">Saldo inicial</span>
+              <span class="resumen-label">Saldo anterior</span>
               <span class="resumen-valor mono" [class.debt]="grupo.saldoInicial > 0" [class.paid]="grupo.saldoInicial < 0">
                 {{ etiquetaSaldo(grupo.saldoInicial) }} {{ formatoMonto(grupo.saldoInicial) }}
               </span>
             </div>
-            <div class="resumen-linea resumen-total">
-              <span class="resumen-label">Total</span>
-              <span class="resumen-valor mono" [class.debt]="grupo.saldoFinal > 0" [class.paid]="grupo.saldoFinal < 0">
-                {{ etiquetaSaldo(grupo.saldoFinal) }} {{ formatoMonto(grupo.saldoFinal) }}
-              </span>
-            </div>
           }
+          <div class="resumen-linea">
+            <span class="resumen-label">Abonos</span>
+            <span class="resumen-valor mono">{{ formatoMonto(grupo.totalAbonos) }}</span>
+          </div>
+          <div class="resumen-linea">
+            <span class="resumen-label">Consumo</span>
+            <span class="resumen-valor mono">{{ formatoMonto(grupo.totalCargos) }}</span>
+          </div>
+          <div class="resumen-linea resumen-total">
+            <span class="resumen-label">Saldo actual</span>
+            <span class="resumen-valor mono" [class.debt]="grupo.saldoFinal > 0" [class.paid]="grupo.saldoFinal < 0">
+              {{ etiquetaSaldo(grupo.saldoFinal) }} {{ formatoMonto(grupo.saldoFinal) }}
+            </span>
+          </div>
         </div>
 
         <div class="table-wrap">
