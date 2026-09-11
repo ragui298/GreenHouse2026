@@ -56,7 +56,17 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(allowedOrigins.split(",")));
+
+        // Los orígenes de la variable de entorno (local + producción) van tal
+        // cual, y además se permite cualquier preview de Vercel de este
+        // proyecto (green-house2026-git-<rama>-greenhouses.vercel.app). Esa
+        // URL cambia según la rama que se esté probando, así que no se puede
+        // ir agregando una por una a mano cada vez -- se admite el patrón
+        // completo. Por eso usa allowedOriginPatterns (que sí soporta "*")
+        // en vez de allowedOrigins (que exige coincidencia exacta).
+        List<String> patrones = new java.util.ArrayList<>(List.of(allowedOrigins.split(",")));
+        patrones.add("https://green-house2026-git-*-greenhouses.vercel.app");
+        config.setAllowedOriginPatterns(patrones);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

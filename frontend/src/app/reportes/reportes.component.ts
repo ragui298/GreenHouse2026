@@ -1,7 +1,9 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { forkJoin, of } from 'rxjs';
 import { TransaccionService } from '../core/services/transaccion.service';
+import { ClienteService } from '../core/services/cliente.service';
 import { Transaccion } from '../core/models/transaccion.model';
 import { Cliente, TipoCliente, TIPOS_CLIENTE } from '../core/models/cliente.model';
 
@@ -42,9 +44,15 @@ interface GrupoReporte {
 })
 export class ReportesComponent {
   private readonly transaccionService = inject(TransaccionService);
+  private readonly clienteService = inject(ClienteService);
 
   readonly transacciones = signal<Transaccion[]>([]);
   readonly saldosIniciales = signal<Record<number, number>>({});
+  // Clientes activos con su saldo actual (todo el historial, calculado en
+  // vivo) -- se piden junto con el reporte para poder mostrar también a
+  // quien tiene saldo pendiente aunque no haya tenido movimiento en el
+  // rango de fechas elegido (si no, no habría forma de saber que existe).
+  readonly clientes = signal<Cliente[]>([]);
   readonly cargando = signal(false);
   readonly error = signal<string | null>(null);
   readonly reporteGenerado = signal(false);
@@ -55,8 +63,9 @@ export class ReportesComponent {
   // terminando de elegir los filtros.
   readonly filtroTipoCliente = signal<TipoCliente | 'TODOS'>('TODOS');
   readonly busquedaNombre = signal('');
+  // Ya no hay un campo "Hasta" en la pantalla: el rango siempre va desde
+  // esta fecha hasta hoy (ver generarReporte()).
   readonly fechaDesde = signal(fechaHoyISO());
-  readonly fechaHasta = signal(fechaHoyISO());
   readonly tiposCliente = TIPOS_CLIENTE;
 
   // Copia de los filtros de arriba tomada en el momento de generar el
@@ -80,47 +89,52 @@ export class ReportesComponent {
     const tieneRango = !!this.fechaDesdeAplicada();
     const saldos = this.saldosIniciales();
 
-    // El backend ya devuelve solo las transacciones del rango pedido (si
-    // se pidió uno) -- acá nada más se filtra por jornada/nombre.
-    const filtradas = this.transacciones().filter(t => {
-      const coincideTipoCliente = tipoCliente === 'TODOS' || t.cliente.tipoCliente === tipoCliente;
-      const coincideNombre = !nombre || t.cliente.nombre.toLowerCase().includes(nombre);
-      return coincideTipoCliente && coincideNombre;
-    });
-
-    const porCliente = new Map<number, GrupoReporte>();
-    for (const t of filtradas) {
-      const existente = porCliente.get(t.cliente.id);
-      if (existente) {
-        existente.transacciones.push(t);
+    const transaccionesPorCliente = new Map<number, Transaccion[]>();
+    for (const t of this.transacciones()) {
+      const lista = transaccionesPorCliente.get(t.cliente.id);
+      if (lista) {
+        lista.push(t);
       } else {
-        porCliente.set(t.cliente.id, {
-          cliente: t.cliente,
-          transacciones: [t],
-          consumoSemana: 0,
-          totalCargos: 0,
-          totalAbonos: 0,
-          tieneSaldoInicial: tieneRango,
-          saldoInicial: 0,
-          saldoFinal: 0
-        });
+        transaccionesPorCliente.set(t.cliente.id, [t]);
       }
     }
 
-    for (const grupo of porCliente.values()) {
-      grupo.transacciones.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
-      grupo.totalCargos = grupo.transacciones
-        .filter(t => t.tipo === 'CARGO')
-        .reduce((acc, t) => acc + t.monto, 0);
-      grupo.totalAbonos = grupo.transacciones
-        .filter(t => t.tipo === 'ABONO')
-        .reduce((acc, t) => acc + t.monto, 0);
-      grupo.consumoSemana = grupo.totalCargos - grupo.totalAbonos;
-      grupo.saldoInicial = tieneRango ? (saldos[grupo.cliente.id] ?? 0) : 0;
-      grupo.saldoFinal = grupo.saldoInicial + grupo.consumoSemana;
+    // Con rango de fechas: se recorren TODOS los clientes activos (para no
+    // dejar afuera a quien tiene saldo pendiente pero no tuvo movimiento en
+    // el rango). Sin rango (modo histórico viejo, cuando se borra "Desde"):
+    // solo tiene sentido recorrer a quienes aparecen en las transacciones,
+    // como funcionaba antes.
+    const clientesBase: Cliente[] = tieneRango
+      ? this.clientes()
+      : Array.from(transaccionesPorCliente.values(), lista => lista[0].cliente);
+
+    const clientesFiltrados = clientesBase.filter(c => {
+      const coincideTipoCliente = tipoCliente === 'TODOS' || c.tipoCliente === tipoCliente;
+      const coincideNombre = !nombre || c.nombre.toLowerCase().includes(nombre);
+      return coincideTipoCliente && coincideNombre;
+    });
+
+    const grupos: GrupoReporte[] = [];
+    for (const cliente of clientesFiltrados) {
+      const transacciones = (transaccionesPorCliente.get(cliente.id) ?? [])
+        .slice()
+        .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+      const totalCargos = transacciones.filter(t => t.tipo === 'CARGO').reduce((acc, t) => acc + t.monto, 0);
+      const totalAbonos = transacciones.filter(t => t.tipo === 'ABONO').reduce((acc, t) => acc + t.monto, 0);
+      const consumoSemana = totalCargos - totalAbonos;
+      const saldoInicial = tieneRango ? (saldos[cliente.id] ?? 0) : 0;
+      const saldoFinal = saldoInicial + consumoSemana;
+
+      // Con rango de fechas, a alguien sin movimiento en el período y sin
+      // saldo pendiente no hay nada que reportarle -- se omite.
+      if (tieneRango && transacciones.length === 0 && saldoFinal === 0) {
+        continue;
+      }
+
+      grupos.push({ cliente, transacciones, consumoSemana, totalCargos, totalAbonos, tieneSaldoInicial: tieneRango, saldoInicial, saldoFinal });
     }
 
-    return Array.from(porCliente.values()).sort((a, b) => a.cliente.nombre.localeCompare(b.cliente.nombre));
+    return grupos.sort((a, b) => a.cliente.nombre.localeCompare(b.cliente.nombre));
   });
 
   readonly cantidadEnviados = computed(() =>
@@ -128,18 +142,28 @@ export class ReportesComponent {
   );
 
   generarReporte(): void {
-    // Recién acá se "congelan" los filtros y se consulta el backend.
+    // Recién acá se "congelan" los filtros y se consulta el backend. El
+    // rango siempre termina hoy -- no hay campo "Hasta" en la pantalla.
+    const desde = this.fechaDesde() || undefined;
+    const hasta = desde ? fechaHoyISO() : undefined;
+
     this.filtroTipoClienteAplicado.set(this.filtroTipoCliente());
     this.busquedaNombreAplicada.set(this.busquedaNombre());
     this.fechaDesdeAplicada.set(this.fechaDesde());
-    this.fechaHastaAplicada.set(this.fechaHasta());
+    this.fechaHastaAplicada.set(fechaHoyISO());
 
     this.cargando.set(true);
     this.error.set(null);
-    this.transaccionService.reportarTodas(this.fechaDesde() || undefined, this.fechaHasta() || undefined).subscribe({
-      next: (respuesta) => {
-        this.transacciones.set(respuesta.transacciones);
-        this.saldosIniciales.set(respuesta.saldosIniciales);
+    forkJoin({
+      reporte: this.transaccionService.reportarTodas(desde, hasta),
+      // Los clientes con saldo (aunque no hayan tenido movimiento en el
+      // rango) solo hacen falta cuando hay un "Desde" puesto.
+      clientes: desde ? this.clienteService.listar() : of<Cliente[]>([])
+    }).subscribe({
+      next: ({ reporte, clientes }) => {
+        this.transacciones.set(reporte.transacciones);
+        this.saldosIniciales.set(reporte.saldosIniciales);
+        this.clientes.set(clientes);
         this.reporteGenerado.set(true);
         this.cargando.set(false);
       },
