@@ -5,10 +5,26 @@ import { TransaccionService } from '../core/services/transaccion.service';
 import { Transaccion } from '../core/models/transaccion.model';
 import { Cliente, TipoCliente, TIPOS_CLIENTE } from '../core/models/cliente.model';
 
+// Fecha de hoy en formato YYYY-MM-DD (lo que espera <input type="date">),
+// en hora local del navegador. Se usa como valor por defecto de los
+// filtros: si el usuario no toca las fechas, el reporte es "el de hoy" en
+// vez de todo el historial.
+function fechaHoyISO(): string {
+  const hoy = new Date();
+  const anio = hoy.getFullYear();
+  const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+  const dia = String(hoy.getDate()).padStart(2, '0');
+  return `${anio}-${mes}-${dia}`;
+}
+
 interface GrupoReporte {
   cliente: Cliente;
   transacciones: Transaccion[];
   consumoSemana: number;
+  // Cargos y abonos del período por separado, para el desglose del
+  // resumen (Consumo / Abonos) y para el mensaje de WhatsApp.
+  totalCargos: number;
+  totalAbonos: number;
   // Si no se pidió un rango de fechas (Desde vacío), no hay un "antes de"
   // bien definido -- en ese caso no se muestra saldo inicial ni total,
   // solo el consumo, como funcionaba el reporte antes de esto.
@@ -39,8 +55,8 @@ export class ReportesComponent {
   // terminando de elegir los filtros.
   readonly filtroTipoCliente = signal<TipoCliente | 'TODOS'>('TODOS');
   readonly busquedaNombre = signal('');
-  readonly fechaDesde = signal('');
-  readonly fechaHasta = signal('');
+  readonly fechaDesde = signal(fechaHoyISO());
+  readonly fechaHasta = signal(fechaHoyISO());
   readonly tiposCliente = TIPOS_CLIENTE;
 
   // Copia de los filtros de arriba tomada en el momento de generar el
@@ -82,6 +98,8 @@ export class ReportesComponent {
           cliente: t.cliente,
           transacciones: [t],
           consumoSemana: 0,
+          totalCargos: 0,
+          totalAbonos: 0,
           tieneSaldoInicial: tieneRango,
           saldoInicial: 0,
           saldoFinal: 0
@@ -91,10 +109,13 @@ export class ReportesComponent {
 
     for (const grupo of porCliente.values()) {
       grupo.transacciones.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
-      grupo.consumoSemana = grupo.transacciones.reduce(
-        (acc, t) => acc + (t.tipo === 'CARGO' ? t.monto : -t.monto),
-        0
-      );
+      grupo.totalCargos = grupo.transacciones
+        .filter(t => t.tipo === 'CARGO')
+        .reduce((acc, t) => acc + t.monto, 0);
+      grupo.totalAbonos = grupo.transacciones
+        .filter(t => t.tipo === 'ABONO')
+        .reduce((acc, t) => acc + t.monto, 0);
+      grupo.consumoSemana = grupo.totalCargos - grupo.totalAbonos;
       grupo.saldoInicial = tieneRango ? (saldos[grupo.cliente.id] ?? 0) : 0;
       grupo.saldoFinal = grupo.saldoInicial + grupo.consumoSemana;
     }
@@ -241,8 +262,6 @@ export class ReportesComponent {
 
     const cargos = grupo.transacciones.filter(t => t.tipo === 'CARGO');
     const abonos = grupo.transacciones.filter(t => t.tipo === 'ABONO');
-    const totalCargos = cargos.reduce((acc, t) => acc + t.monto, 0);
-    const totalAbonos = abonos.reduce((acc, t) => acc + t.monto, 0);
 
     const partes: string[] = [
       '-- CONSUMO EN SODA --',
@@ -265,7 +284,7 @@ export class ReportesComponent {
         ...this.agruparTransaccionesPorFecha(cargos),
         '---------------------------------',
         '---------------------------------',
-        `TOTAL CONSUMIDO : ${this.formatoMontoMensaje(totalCargos)}`,
+        `TOTAL CONSUMIDO : ${this.formatoMontoMensaje(grupo.totalCargos)}`,
         '---------------------------------'
       );
     }
@@ -279,7 +298,7 @@ export class ReportesComponent {
         ...this.agruparTransaccionesPorFecha(abonos),
         '++++++++++++++++++++',
         '++++++++++++++++++++',
-        `TOTAL ABONOS : ${this.formatoMontoMensaje(totalAbonos)}`,
+        `TOTAL ABONOS : ${this.formatoMontoMensaje(grupo.totalAbonos)}`,
         '++++++++++++++++++++'
       );
     }
