@@ -5,6 +5,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -39,6 +40,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
         return build(HttpStatus.FORBIDDEN, "Tu perfil no tiene acceso a este recurso.");
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Map<String, Object>> handleAuthentication(AuthenticationException ex) {
+        // Usuario o contraseña incorrectos en /api/auth/login: sin este
+        // handler caía en handleUnexpected() y devolvía 500, así que el login
+        // mostraba "No se pudo conectar con el servidor" en vez de avisar que
+        // las credenciales estaban mal (login.component espera 401).
+        return build(HttpStatus.UNAUTHORIZED, "Usuario o contraseña incorrectos.");
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
