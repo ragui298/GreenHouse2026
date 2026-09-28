@@ -9,6 +9,17 @@
   font-size: 13px;
 }
 
+.edicion-titulo {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+
+.edicion-nota {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--color-ink-soft);
+}
+
 .table-wrap {
   background: var(--color-surface);
   border: 1px solid var(--color-border);

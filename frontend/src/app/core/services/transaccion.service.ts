@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ReporteSemanal, Transaccion, TransaccionRequest } from '../models/transaccion.model';
+import { ReporteSemanal, Transaccion, TransaccionEditarRequest, TransaccionRequest } from '../models/transaccion.model';
 
 @Injectable({ providedIn: 'root' })
 export class TransaccionService {
@@ -27,6 +27,10 @@ export class TransaccionService {
 
   historialCliente(clienteId: number): Observable<Transaccion[]> {
     return this.http.get<Transaccion[]>(`${this.apiUrl}/cliente/${clienteId}`);
+  }
+
+  editar(id: number, request: TransaccionEditarRequest): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${id}`, request);
   }
 
   eliminar(id: number): Observable<void> {

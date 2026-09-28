@@ -55,7 +55,7 @@ public class Transaccion {
     private String descripcion;
 
     @Builder.Default
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false)
     private LocalDateTime fecha = LocalDateTime.now(ZonaHoraria.COSTA_RICA);
 
     @Builder.Default

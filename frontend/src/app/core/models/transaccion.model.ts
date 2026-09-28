@@ -16,6 +16,12 @@ export interface TransaccionRequest {
   detalles?: DetalleRequest[];
 }
 
+// Fecha en formato 'YYYY-MM-DDTHH:mm' (hora de Costa Rica, sin zona).
+export interface TransaccionEditarRequest {
+  monto: number;
+  fecha: string;
+}
+
 export interface DetalleTransaccion {
   id: number;
   producto: Producto;
