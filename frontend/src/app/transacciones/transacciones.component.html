@@ -23,6 +23,65 @@
     </div>
   </div>
 
+  @if (exito()) {
+    <p class="success-message">{{ exito() }}</p>
+  }
+
+  @if (editando(); as t) {
+    <div class="form-card">
+      <form (ngSubmit)="guardarEdicion()">
+        <p class="edicion-titulo">
+          Editar {{ t.tipo === 'CARGO' ? 'cargo' : 'abono' }} de <strong>{{ t.cliente.nombre }}</strong>
+        </p>
+        @if (errorEdicion()) {
+          <p class="error-message">{{ errorEdicion() }}</p>
+        }
+        <div class="form-row">
+          <div class="form-field">
+            <label for="fechaEdicion">Fecha *</label>
+            <input
+              id="fechaEdicion"
+              name="fecha"
+              type="datetime-local"
+              class="form-input"
+              [max]="fechaMaxima()"
+              [ngModel]="fechaEdicion()"
+              (ngModelChange)="fechaEdicion.set($event)"
+              required
+            />
+          </div>
+          <div class="form-field">
+            <label for="montoEdicion">Monto (₡) *</label>
+            <input
+              id="montoEdicion"
+              name="monto"
+              type="number"
+              min="1"
+              step="any"
+              inputmode="decimal"
+              class="form-input"
+              [ngModel]="montoEdicion()"
+              (ngModelChange)="montoEdicion.set($event)"
+              required
+            />
+          </div>
+        </div>
+        @if (t.detalles.length > 0) {
+          <p class="edicion-nota">
+            Esta transacción tiene productos. Si cambiás el monto, el saldo del cliente se ajusta,
+            pero el detalle de productos queda como estaba.
+          </p>
+        }
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" [disabled]="guardandoEdicion()">
+            {{ guardandoEdicion() ? 'Guardando…' : 'Guardar' }}
+          </button>
+          <button type="button" class="btn-ghost" (click)="cancelarEdicion()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  }
+
   @if (mostrandoLimitado()) {
     <p class="state-message aviso-limite">
       Mostrando las últimas {{ transaccionesFiltradas().length }} de {{ transacciones().length }} transacciones.
@@ -70,6 +129,9 @@
                   <button class="btn-ghost" (click)="toggleDetalle(t)">
                     {{ expandidaId() === t.id ? 'Ocultar' : 'Ver' }}
                   </button>
+                }
+                @if (puedeEditar) {
+                  <button class="btn-ghost" (click)="editar(t)">Editar</button>
                 }
                 @if (puedeEliminar) {
                   <button class="btn-danger" (click)="eliminar(t)">Eliminar</button>
