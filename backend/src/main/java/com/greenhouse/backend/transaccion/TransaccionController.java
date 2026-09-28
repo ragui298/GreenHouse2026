@@ -1,6 +1,7 @@
 package com.greenhouse.backend.transaccion;
 
 import com.greenhouse.backend.transaccion.dto.ReporteSemanalResponse;
+import com.greenhouse.backend.transaccion.dto.TransaccionEditarRequest;
 import com.greenhouse.backend.transaccion.dto.TransaccionRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -64,6 +65,13 @@ public class TransaccionController {
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nombreArchivo + "\"")
                 .body(archivo);
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("@permisoService.tieneAcceso('TRANSACCIONES_EDITAR')")
+    public ResponseEntity<Void> editar(@PathVariable("id") Long id, @Valid @RequestBody TransaccionEditarRequest request) {
+        transaccionService.editar(id, request);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")

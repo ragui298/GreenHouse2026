@@ -2,11 +2,13 @@ package com.greenhouse.backend.transaccion;
 
 import com.greenhouse.backend.cliente.Cliente;
 import com.greenhouse.backend.cliente.ClienteRepository;
+import com.greenhouse.backend.config.ZonaHoraria;
 import com.greenhouse.backend.exception.ResourceNotFoundException;
 import com.greenhouse.backend.producto.Producto;
 import com.greenhouse.backend.producto.ProductoRepository;
 import com.greenhouse.backend.transaccion.dto.DetalleRequest;
 import com.greenhouse.backend.transaccion.dto.ReporteSemanalResponse;
+import com.greenhouse.backend.transaccion.dto.TransaccionEditarRequest;
 import com.greenhouse.backend.transaccion.dto.TransaccionRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -101,6 +104,24 @@ public class TransaccionService {
 
     public BigDecimal saldoCliente(Long clienteId) {
         return transaccionRepository.calcularSaldo(clienteId);
+    }
+
+    @Transactional
+    public void editar(Long id, TransaccionEditarRequest request) {
+        Transaccion transaccion = transaccionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Transacción no encontrada: " + id));
+
+        if (request.getFecha().isAfter(LocalDateTime.now(ZonaHoraria.COSTA_RICA))) {
+            throw new IllegalArgumentException("La fecha no puede ser posterior a hoy.");
+        }
+
+        // Si la transacción tiene productos, los detalles quedan como estaban:
+        // el saldo y los reportes se calculan con 'monto', no con los
+        // subtotales, así que corregir el monto (ej. un descuento) no descuadra
+        // nada -- solo que la suma de productos ya no va a coincidir.
+        transaccion.setMonto(request.getMonto());
+        transaccion.setFecha(request.getFecha());
+        transaccionRepository.save(transaccion);
     }
 
     @Transactional

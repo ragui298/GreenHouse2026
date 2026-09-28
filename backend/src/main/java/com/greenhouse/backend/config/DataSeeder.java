@@ -36,6 +36,7 @@ public class DataSeeder implements CommandLineRunner {
             new RecursoBase("PRODUCTOS", "Mantenimiento de productos", "Ver y administrar el catálogo de productos"),
             new RecursoBase("TRANSACCIONES", "Transacciones", "Registrar cargos (fiado) y abonos (pagos)"),
             new RecursoBase("TRANSACCIONES_ELIMINAR", "Eliminar transacciones", "Botón para eliminar una transacción registrada"),
+            new RecursoBase("TRANSACCIONES_EDITAR", "Editar transacciones", "Botón para corregir la fecha y el monto de una transacción"),
             new RecursoBase("REPORTES", "Reportes", "Ver totales adeudados y reportes generales"),
             new RecursoBase("EXPORTAR", "Exportar transacciones", "Descargar el historial de transacciones en Excel"),
             new RecursoBase("USUARIOS", "Mantenimiento de usuarios", "Ver y administrar usuarios"),
