@@ -54,9 +54,15 @@ export class TransaccionesComponent implements OnInit {
   readonly fechaDesde = signal(fechaISO(TransaccionesComponent.DIAS_DEFAULT - 1));
   readonly fechaHasta = signal(fechaISO());
   readonly hoy = fechaISO();
+  private readonly desdeDefault = this.fechaDesde();
+  private readonly hastaDefault = this.fechaHasta();
 
+  // Si el usuario eligió su propio rango de fechas, se le muestra todo lo
+  // de ese rango (sin el tope de LIMITE_DEFAULT), igual que con los otros
+  // filtros.
   readonly hayFiltrosActivos = computed(() =>
-    this.busqueda().trim() !== '' || this.filtroTipo() !== 'TODOS' || this.filtroTipoCliente() !== 'TODOS'
+    this.busqueda().trim() !== '' || this.filtroTipo() !== 'TODOS' || this.filtroTipoCliente() !== 'TODOS' ||
+    this.fechaDesde() !== this.desdeDefault || this.fechaHasta() !== this.hastaDefault
   );
 
   readonly transaccionesFiltradas = computed(() => {
