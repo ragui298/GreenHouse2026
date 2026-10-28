@@ -79,6 +79,13 @@ public class TransaccionService {
         return transaccionRepository.findAllConDetallesOrderByFechaDesc();
     }
 
+    public List<Transaccion> listarEntre(LocalDate desde, LocalDate hasta) {
+        if (desde.isAfter(hasta)) {
+            throw new IllegalArgumentException("La fecha 'desde' no puede ser posterior a 'hasta'.");
+        }
+        return transaccionRepository.findConDetallesEntreFechasDesc(desde.atStartOfDay(), hasta.atTime(23, 59, 59));
+    }
+
     public ReporteSemanalResponse reporteSemanal(LocalDate desde, LocalDate hasta) {
         List<Transaccion> transacciones;
         Map<Long, BigDecimal> saldosIniciales;

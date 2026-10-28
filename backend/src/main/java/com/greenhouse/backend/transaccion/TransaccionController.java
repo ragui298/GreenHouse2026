@@ -31,8 +31,17 @@ public class TransaccionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(transaccionService.registrar(request));
     }
 
+    // Con desde/hasta devuelve solo ese rango (lo que usa la pantalla
+    // Transacciones). Sin parámetros sigue devolviendo todo el historial,
+    // para no romper a quien todavía tenga cargada la versión vieja del
+    // frontend.
     @GetMapping
-    public List<Transaccion> listarTodas() {
+    public List<Transaccion> listar(
+            @RequestParam(value = "desde", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(value = "hasta", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        if (desde != null && hasta != null) {
+            return transaccionService.listarEntre(desde, hasta);
+        }
         return transaccionService.listarTodas();
     }
 

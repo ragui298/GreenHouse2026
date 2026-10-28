@@ -68,6 +68,20 @@ public interface TransaccionRepository extends JpaRepository<Transaccion, Long> 
     """)
     List<Transaccion> findConDetallesEntreFechas(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
 
+    // Para la pantalla Transacciones: mismo JOIN FETCH, acotado a un rango y
+    // con lo más reciente primero. Traer todo el historial (8.700+ filas en
+    // octubre 2026, ~6.000 nuevas por mes) dejaba sin responder por ratos a
+    // la instancia gratuita de Render (512 MB / 0.15 CPU).
+    @Query("""
+        SELECT DISTINCT t FROM Transaccion t
+        LEFT JOIN FETCH t.cliente
+        LEFT JOIN FETCH t.detalles d
+        LEFT JOIN FETCH d.producto
+        WHERE t.fecha >= :desde AND t.fecha <= :hasta
+        ORDER BY t.fecha DESC
+    """)
+    List<Transaccion> findConDetallesEntreFechasDesc(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
+
     // Saldo acumulado de cada cliente hasta ANTES de una fecha (todo lo de
     // semanas previas, sin contar la semana que se está reportando). Es lo
     // que el reporte semanal muestra como "saldo inicial": lo que el

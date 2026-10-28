@@ -6,6 +6,16 @@ import { AuthService } from '../core/services/auth.service';
 import { Transaccion, TipoTransaccion } from '../core/models/transaccion.model';
 import { TipoCliente, TIPOS_CLIENTE } from '../core/models/cliente.model';
 
+// Fecha en formato YYYY-MM-DD (lo que espera <input type="date">) en la
+// hora local del navegador, 'diasAtras' días antes de hoy.
+function fechaISO(diasAtras = 0): string {
+  const d = new Date();
+  d.setDate(d.getDate() - diasAtras);
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mes}-${dia}`;
+}
+
 @Component({
   selector: 'app-transacciones',
   standalone: true,
@@ -15,6 +25,9 @@ import { TipoCliente, TIPOS_CLIENTE } from '../core/models/cliente.model';
 })
 export class TransaccionesComponent implements OnInit {
   private static readonly LIMITE_DEFAULT = 150;
+  // Por defecto se piden solo los últimos 15 días (hoy incluido): traer
+  // todo el historial de una vez dejaba sin responder por ratos al backend.
+  private static readonly DIAS_DEFAULT = 15;
 
   private readonly transaccionService = inject(TransaccionService);
   private readonly authService = inject(AuthService);
@@ -38,6 +51,9 @@ export class TransaccionesComponent implements OnInit {
   readonly filtroTipoCliente = signal<TipoCliente | 'TODOS'>('TODOS');
   readonly tiposCliente = TIPOS_CLIENTE;
   readonly expandidaId = signal<number | null>(null);
+  readonly fechaDesde = signal(fechaISO(TransaccionesComponent.DIAS_DEFAULT - 1));
+  readonly fechaHasta = signal(fechaISO());
+  readonly hoy = fechaISO();
 
   readonly hayFiltrosActivos = computed(() =>
     this.busqueda().trim() !== '' || this.filtroTipo() !== 'TODOS' || this.filtroTipoCliente() !== 'TODOS'
@@ -73,10 +89,24 @@ export class TransaccionesComponent implements OnInit {
     this.cargar();
   }
 
+  cambiarRango(campo: 'desde' | 'hasta', valor: string): void {
+    if (!valor) {
+      return;
+    }
+    (campo === 'desde' ? this.fechaDesde : this.fechaHasta).set(valor);
+    this.cargar();
+  }
+
   cargar(): void {
+    if (this.fechaDesde() > this.fechaHasta()) {
+      this.error.set('La fecha "Desde" no puede ser posterior a "Hasta".');
+      this.transacciones.set([]);
+      this.cargando.set(false);
+      return;
+    }
     this.cargando.set(true);
     this.error.set(null);
-    this.transaccionService.listarTodas().subscribe({
+    this.transaccionService.listarEntre(this.fechaDesde(), this.fechaHasta()).subscribe({
       next: (transacciones) => {
         this.transacciones.set(transacciones);
         this.cargando.set(false);

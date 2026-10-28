@@ -1,7 +1,15 @@
 <div class="page">
   <div class="page-header">
     <h1>Transacciones</h1>
-    <div style="display: flex; gap: 8px;">
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+      <label class="rango-label">
+        Desde
+        <input type="date" class="form-input" [max]="fechaHasta()" [ngModel]="fechaDesde()" (ngModelChange)="cambiarRango('desde', $event)" />
+      </label>
+      <label class="rango-label">
+        Hasta
+        <input type="date" class="form-input" [max]="hoy" [ngModel]="fechaHasta()" (ngModelChange)="cambiarRango('hasta', $event)" />
+      </label>
       <select class="form-select" [ngModel]="filtroTipo()" (ngModelChange)="filtroTipo.set($event)">
         <option value="TODOS">Todos los tipos</option>
         <option value="CARGO">Cargos</option>
@@ -84,7 +92,7 @@
 
   @if (mostrandoLimitado()) {
     <p class="state-message aviso-limite">
-      Mostrando las últimas {{ transaccionesFiltradas().length }} de {{ transacciones().length }} transacciones.
+      Mostrando las últimas {{ transaccionesFiltradas().length }} de {{ transacciones().length }} transacciones del rango elegido.
       Usá los filtros de arriba para buscar algo más específico.
     </p>
   }
@@ -94,7 +102,7 @@
   } @else if (error()) {
     <p class="state-message error">{{ error() }}</p>
   } @else if (transaccionesFiltradas().length === 0) {
-    <p class="state-message">No hay transacciones que coincidan con la búsqueda.</p>
+    <p class="state-message">No hay transacciones en ese rango de fechas que coincidan con la búsqueda.</p>
   } @else {
     <div class="table-wrap">
       <table class="data-table">
