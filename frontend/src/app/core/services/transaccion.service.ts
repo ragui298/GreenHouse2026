@@ -18,6 +18,11 @@ export class TransaccionService {
     return this.http.get<Transaccion[]>(this.apiUrl);
   }
 
+  // Fechas 'YYYY-MM-DD', ambas incluidas.
+  listarEntre(desde: string, hasta: string): Observable<Transaccion[]> {
+    return this.http.get<Transaccion[]>(this.apiUrl, { params: { desde, hasta } });
+  }
+
   reportarTodas(desde?: string, hasta?: string): Observable<ReporteSemanal> {
     const params: Record<string, string> = {};
     if (desde) params['desde'] = desde;
